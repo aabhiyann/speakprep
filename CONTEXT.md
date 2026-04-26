@@ -1,71 +1,13 @@
 # CONTEXT.md — Agent Shared Memory
-# Update this every time you finish a task or switch agents
+# Update this every time you finish a task or switch agents.
+# Rules are in CLAUDE.md / AGENTS.md / .cursorrules / copilot-instructions.md
 
 ## Project: SpeakPrep — Real-time Voice AI Mock Interview Coach
 ## Author: Abhiyan Sainju
 ## Started: April 2026
-## Contributors: Abhiyan Sainju only — no AI tools (Claude, Cursor, Codex, Gemini, etc.) appear as git contributors
+## Contributors: Abhiyan Sainju only — no AI tools appear as git contributors
 ## Current Phase: 0 — Environment Setup (COMPLETE)
 ## Current Task: Phase 0 tagged — ready for Phase 1
-
-## SYNC RULE — Critical
-These 5 files must always contain identical rules:
-`CLAUDE.md` | `AGENTS.md` | `.cursorrules` | `.github/copilot-instructions.md` | `CONTEXT.md`
-
-**When you update any rule, update all 5 files. Project state (below) lives in CONTEXT.md only.**
-
-## GIT CONTRIBUTOR RULE — Critical
-**Only Abhiyan Sainju appears as a contributor on GitHub. Always.**
-- Never add `Co-Authored-By:` trailers to any commit
-- Never use `--author` flags with AI tool names
-- Commits are made by the user's git identity only
-
-## AGENT SETUP — Run This First Every Session
-**Always activate the Python venv before running any backend commands:**
-```bash
-source backend/.venv/bin/activate
-```
-- Python 3.12 venv lives at `backend/.venv/` (gitignored)
-- Dev tools (ruff, mypy, pytest, pre-commit) are installed inside it
-- Without activation: wrong Python version, missing packages, pre-commit may fail
-
-## AGENT HANDOFF PROTOCOL — Do This Before Switching Agents
-1. **Commit current state**
-   ```bash
-   git add -p
-   git commit -m "wip: [what you were doing] — switching agents"
-   ```
-2. **Update CONTEXT.md** — Current Task, What's Working, What's In Progress, What's Blocked
-   ```bash
-   git add CONTEXT.md
-   git commit -m "docs: update CONTEXT.md before agent switch"
-   ```
-3. **Push**
-   ```bash
-   git push origin [current-branch]
-   ```
-
-## GIT DISCIPLINE — Agents Must Follow This
-**Never use `git add .` or `git add -A`. Always stage granularly.**
-
-### Commit message format
-```
-type(scope): short description (max 72 chars)
-```
-Types: `feat` `fix` `test` `docs` `refactor` `perf` `chore` `revert` `wip`
-Scopes: `audio` `vad` `asr` `llm` `tts` `ws` `api` `auth` `db` `cache` `pipeline` `scoring` `resume` `questions` `dashboard` `ci` `infra`
-
-### Rules
-- One logical unit per commit (one function, one test, one config change)
-- `wip:` commits only on feature branches — never merge to develop
-- Always branch from `develop`, never from `main`
-- Branch naming: `feature/vad-recorder`, `fix/auth-token-expiry`, `chore/update-deps`
-- Delete feature branches after merge
-- Tag each phase completion: `git tag -a v0.X.0-phaseN -m "Phase N complete: ..."`
-
-### Branch protection
-- `main` — requires PR + CI pass + 1 review
-- `develop` — requires CI pass
 
 ## Architecture Summary
 - Backend: Python 3.12, FastAPI, asyncio, WebSockets
@@ -79,14 +21,20 @@ Scopes: `audio` `vad` `asr` `llm` `tts` `ws` `api` `auth` `db` `cache` `pipeline
 ## Docs Reference
 - PRD: /docs/doc1-prd-product.md
 - Architecture: /docs/doc2-system-design-architecture.md
-- Build Guide: /docs/doc3-build-guide.md
+- Build Guide: /docs/doc3-build-guide-curriculum.md
 - Portfolio: /docs/doc4-interview-portfolio.md
+- Dev Playbook: /docs/doc5-dev-playbook.md
 
 ## What's Working
 - [x] Git repo initialized and pushed to GitHub
 - [x] Full directory structure (backend + frontend)
 - [x] Python 3.12 venv at backend/.venv
 - [x] Dev tools: ruff, mypy, pytest, pytest-asyncio, pytest-cov, pre-commit
+- [x] Pre-commit hooks (gitleaks, ruff, trailing whitespace, no-commit-to-main)
+- [x] GitHub Actions CI + deploy workflows
+- [x] Branch protection (main + develop)
+- [x] .env.example with all required variables
+- [x] Agent instruction files (CLAUDE.md, AGENTS.md, .cursorrules, copilot-instructions.md)
 
 ## What's In Progress
 - Nothing — Phase 0 complete, Phase 1 not started
@@ -103,5 +51,5 @@ Scopes: `audio` `vad` `asr` `llm` `tts` `ws` `api` `auth` `db` `cache` `pipeline
 - Nothing locked yet
 
 ## Last Updated
-- Date: 2026-04-25
+- Date: 2026-04-26
 - By: Abhiyan (Phase 0 complete)
