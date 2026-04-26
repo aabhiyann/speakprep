@@ -1,0 +1,1103 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+\PassOptionsToPackage{dvipsnames,svgnames,x11names}{xcolor}
+%
+\documentclass[
+  11pt,
+]{article}
+\usepackage{amsmath,amssymb}
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math} % this also loads fontspec
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+\usepackage{lmodern}
+\ifPDFTeX\else
+  % xetex/luatex font selection
+  \setmainfont[]{DejaVu Serif}
+  \setmonofont[Scale=0.82]{DejaVu Sans Mono}
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\usepackage[top=2.5cm,bottom=2.5cm,left=2.8cm,right=2.8cm]{geometry}
+\usepackage{listings}
+\newcommand{\passthrough}[1]{#1}
+\lstset{defaultdialect=[5.3]Lua}
+\lstset{defaultdialect=[x86masm]Assembler}
+\usepackage{longtable,booktabs,array}
+\usepackage{calc} % for calculating minipage widths
+% Correct order of tables after \paragraph or \subparagraph
+\usepackage{etoolbox}
+\makeatletter
+\patchcmd\longtable{\par}{\if@noskipsec\mbox{}\fi\par}{}{}
+\makeatother
+% Allow footnotes in longtable head/foot
+\IfFileExists{footnotehyper.sty}{\usepackage{footnotehyper}}{\usepackage{footnote}}
+\makesavenoteenv{longtable}
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\ifLuaTeX
+  \usepackage{selnolig}  % disable illegal ligatures
+\fi
+\IfFileExists{bookmark.sty}{\usepackage{bookmark}}{\usepackage{hyperref}}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same}
+\hypersetup{
+  colorlinks=true,
+  linkcolor={blue},
+  filecolor={Maroon},
+  citecolor={Blue},
+  urlcolor={Blue},
+  pdfcreator={LaTeX via pandoc}}
+
+\title{SpeakPrep: Product Requirements Document}
+\author{Abhiyan Sainju}
+\date{April 2026}
+
+\begin{document}
+\maketitle
+
+\hypertarget{speakprep-document-1-product-requirements-document}{%
+\section{SpeakPrep --- Document 1: Product Requirements
+Document}\label{speakprep-document-1-product-requirements-document}}
+
+\hypertarget{version-1.0-author-abhiyan-sainju-april-2026}{%
+\subsubsection{Version 1.0 \textbar{} Author: Abhiyan Sainju \textbar{}
+April 2026}\label{version-1.0-author-abhiyan-sainju-april-2026}}
+
+\hypertarget{status-living-document-update-as-product-evolves}{%
+\subsubsection{Status: LIVING DOCUMENT --- update as product
+evolves}\label{status-living-document-update-as-product-evolves}}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\begin{quote}
+\textbf{How to use this doc:} This is your single source of truth on
+WHAT you're building and WHY. Every engineering decision in Docs 2 and 3
+traces back here. When you're mid-build and tempted to add a feature,
+come back to this doc first. If it doesn't serve a user story here, it
+doesn't get built yet.
+\end{quote}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\hypertarget{table-of-contents}{%
+\subsection{TABLE OF CONTENTS}\label{table-of-contents}}
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  \protect\hyperlink{1-executive-summary}{Executive Summary}
+\item
+  \protect\hyperlink{2-problem-statement}{Problem Statement}
+\item
+  \protect\hyperlink{3-market-context}{Market Context}
+\item
+  \protect\hyperlink{4-target-users}{Target Users}
+\item
+  \protect\hyperlink{5-product-vision}{Product Vision}
+\item
+  \protect\hyperlink{6-feature-set--phase-1}{Feature Set --- Phase 1
+  (Interview Coach)}
+\item
+  \protect\hyperlink{7-feature-set--phase-2-deferred}{Feature Set ---
+  Phase 2 (General Platform)}
+\item
+  \protect\hyperlink{8-user-stories}{User Stories}
+\item
+  \protect\hyperlink{9-non-goals}{Non-Goals}
+\item
+  \protect\hyperlink{10-success-metrics--kpis}{Success Metrics \& KPIs}
+\item
+  \protect\hyperlink{11-assumptions-vs-decisions}{Assumptions vs
+  Decisions}
+\item
+  \protect\hyperlink{12-risks}{Risks}
+\item
+  \protect\hyperlink{13-monetization-strategy}{Monetization Strategy}
+\item
+  \protect\hyperlink{14-competitive-differentiation}{Competitive
+  Differentiation}
+\end{enumerate}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\hypertarget{executive-summary}{%
+\subsection{1. Executive Summary}\label{executive-summary}}
+
+\textbf{SpeakPrep} is a real-time, voice-first AI mock interview coach.
+Users speak naturally; SpeakPrep responds conversationally --- probing,
+pushing back, and scoring --- in under 2 seconds. It covers the full
+interview lifecycle: resume intake, behavioral practice, technical
+walkthroughs, and system design sessions, with AI feedback that improves
+with every session.
+
+SpeakPrep is \textbf{Phase 1} of a larger voice AI platform. The
+interview coach is the wedge --- a high-urgency, high-retention use case
+that proves the core voice pipeline. The platform expands to general
+voice AI in Phase 2.
+
+\textbf{Why interview coaching as the wedge:} - High personal urgency
+(users are actively job-hunting --- pain is immediate) - Repeated usage
+need (multiple interview rounds, multiple companies) - Measurable
+outcomes (did they get the job? did their scores improve?) - Defensible
+against ChatGPT/Claude (those are chat products; we're a voice
+\emph{coach}) - Personal relevance: this is your own lived experience as
+a recent MS grad job hunting
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\hypertarget{problem-statement}{%
+\subsection{2. Problem Statement}\label{problem-statement}}
+
+\hypertarget{the-primary-problem}{%
+\subsubsection{The Primary Problem}\label{the-primary-problem}}
+
+Job seekers need realistic, conversational interview practice. But:
+
+\textbf{Human mocks are inaccessible.} Professional coaching costs
+\$150--\$500/session. Peer mocks on Pramp/Exponent yield inconsistent
+quality --- 30\% of users report bad experiences. Family/friends can't
+replicate interviewer pressure.
+
+\textbf{Current AI tools don't feel like real interviews.} Google
+Interview Warmup asks questions and waits. Final Round AI reads back
+bullet points. ChatGPT doesn't push back, probe for details, or simulate
+an interviewer who says ``walk me through your algorithm choice.'' None
+of these products create the \emph{social pressure} that makes real
+interviews hard.
+
+\textbf{The prep journey is fragmented.} A typical job seeker uses 4--5
+separate tools: LeetCode for coding (\$35/month), Big Interview for
+behavioral (\$39--\$299/month), Glassdoor for company research (free),
+Interviewing.io for calibration (\$225/session), ChatGPT for stories (ad
+hoc). No product covers the whole journey.
+
+\textbf{Progress is invisible.} Users practice but don't know if they're
+improving. There's no score trend, no ``you ramble on this topic,'' no
+``your STAR answers are missing Results 60\% of the time.''
+
+\hypertarget{the-secondary-problem-platform-vision}{%
+\subsubsection{The Secondary Problem (Platform
+Vision)}\label{the-secondary-problem-platform-vision}}
+
+Beyond interviews, voice interaction is fundamentally better than text
+for many AI use cases --- language practice, presentation coaching,
+thinking out loud, real-time tutoring. Building the voice pipeline for
+SpeakPrep creates the infrastructure for these adjacent products.
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\hypertarget{market-context}{%
+\subsection{3. Market Context}\label{market-context}}
+
+\hypertarget{market-size}{%
+\subsubsection{Market Size}\label{market-size}}
+
+\begin{itemize}
+\tightlist
+\item
+  AI recruitment market: \textbf{\$596--706M in 2025}, growing at
+  6.8--7.5\% CAGR
+\item
+  Candidate-facing AI interview coaching segment: \textbf{\$1.7B in
+  2025}, growing at \textbf{30.6\% CAGR}
+\item
+  58\% of job applicants now use AI tools during their search
+\item
+  93\% of job seekers report interview anxiety as a significant barrier
+\end{itemize}
+
+\hypertarget{competitive-landscape}{%
+\subsubsection{Competitive Landscape}\label{competitive-landscape}}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Competitor
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Price
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+What They Do
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Fatal Weakness
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+\textbf{Final Round AI} & \$96--\$148/mo & Live CoPilot during
+interviews, AI mock & Buggy, expensive, generic responses. Users report
+it ``feels like a spell-checker, not a coach.'' \\
+\textbf{Google Interview Warmup} & Free & 5 scripted questions, basic
+keyword feedback & No conversation, no follow-ups, no personalization.
+Completely static. \\
+\textbf{Yoodli} & \$10--\$20/mo & Speech delivery coaching (pacing,
+fillers) & Coaches delivery only, not content. Won't tell you your STAR
+answer was weak. \\
+\textbf{Hume AI} & API only & Voice AI infrastructure with emotional
+detection & Not a consumer product. Requires engineering to use. \\
+\textbf{Interviewing.io} & \$225+/session & Live mock with FAANG
+engineers & \$1K+ for 5 sessions. Inaccessible to most job seekers. \\
+\textbf{Pramp/Exponent} & Free--\$79/mo & Peer-to-peer mocks & 30\% bad
+peer experiences. No consistency. \\
+\textbf{Big Interview} & \$39--\$299 & Video lessons + scripted question
+practice & Static, not conversational. AI feedback is generic. \\
+\end{longtable}
+
+\hypertarget{the-gap-speakprep-fills}{%
+\subsubsection{The Gap SpeakPrep Fills}\label{the-gap-speakprep-fills}}
+
+No competitor combines all four of: 1. \textbf{Real-time voice
+conversation} (not text, not scripted Q\&A) 2. \textbf{Intelligent
+probing} (follow-up questions based on your actual answer) 3.
+\textbf{End-to-end coverage} (behavioral + technical + system design in
+one product) 4. \textbf{Progress tracking} (scores trend over time,
+specific improvement areas)
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\hypertarget{target-users}{%
+\subsection{4. Target Users}\label{target-users}}
+
+\hypertarget{primary-user-the-active-job-seeker-jane}{%
+\subsubsection{Primary User: ``The Active Job Seeker''
+(Jane)}\label{primary-user-the-active-job-seeker-jane}}
+
+\textbf{Who she is:} - Age 22--32, recent graduate or early-career
+professional (0--5 YOE) - Actively applying for software engineering or
+data roles - Has 3--8 interviews scheduled or expected in the next 4
+weeks - Has tried ChatGPT for practice but finds it too passive - Can't
+afford \$150/session human coaching
+
+\textbf{Her pain:} \textgreater{} ``I know what I want to say but when I
+actually have to say it out loud in an interview my mind goes blank. I
+need to practice \emph{speaking}, not just writing.''
+
+\textbf{What she needs:} - A practice partner that pushes back like a
+real interviewer - Specific feedback (``your Result was vague --- what
+was the actual business impact?'') - Confidence from repetition before
+the real thing
+
+\textbf{Session pattern:} 30--45 min/day, 3--5x per week, for 2--6 weeks
+before interviews.
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\hypertarget{secondary-user-the-career-switcher-marcus}{%
+\subsubsection{Secondary User: ``The Career Switcher''
+(Marcus)}\label{secondary-user-the-career-switcher-marcus}}
+
+\textbf{Who he is:} - Age 28--40, transitioning from non-technical
+background (finance, law, sales) - Pursuing product management, data
+analytics, or SWE roles - Less interview experience, more anxiety -
+Values structured guidance over open-ended practice
+
+\textbf{His pain:} \textgreater{} ``I don't even know what interviewers
+are looking for. I need someone to explain what a good answer sounds
+like, not just ask me questions.''
+
+\textbf{What he needs:} - More educational scaffolding (explain what
+STAR means, show examples) - Gentler difficulty progression -
+Post-session written feedback to study
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\hypertarget{tertiary-user-the-non-native-speaker-wei}{%
+\subsubsection{Tertiary User: ``The Non-Native Speaker''
+(Wei)}\label{tertiary-user-the-non-native-speaker-wei}}
+
+\textbf{Who he is:} - International student or professional, strong
+technical skills - English is second language --- confident in writing,
+less confident speaking - Particularly anxious about phone screens and
+verbal communication
+
+\textbf{His pain:} \textgreater{} ``I answer technical questions fine
+but when they ask `tell me about yourself' I freeze. I need to practice
+speaking English in an interview context specifically.''
+
+\textbf{What he needs:} - Speaking pace and clarity feedback -
+Pronunciation-aware scoring (not penalize accents, but flag pace/filler
+issues) - Low-stakes environment to build spoken English confidence
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\hypertarget{product-vision}{%
+\subsection{5. Product Vision}\label{product-vision}}
+
+\hypertarget{phase-1-product-speakprep-interview-coach-what-were-building-now}{%
+\subsubsection{Phase 1 Product (SpeakPrep Interview Coach) --- What
+We're Building
+Now}\label{phase-1-product-speakprep-interview-coach-what-were-building-now}}
+
+A web-based, voice-first AI mock interview platform where:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  \textbf{User uploads resume + selects target role/company}
+\item
+  \textbf{Selects interview type:} Behavioral, Technical, System Design,
+  Full Loop
+\item
+  \textbf{Speaks naturally} --- SpeakPrep transcribes, understands,
+  responds in real-time
+\item
+  \textbf{AI probes intelligently} --- ``Can you be more specific about
+  what you personally contributed?'' --- not scripted follow-ups
+\item
+  \textbf{Scoring runs live and post-session} --- content, structure,
+  confidence markers, filler words
+\item
+  \textbf{Post-session report} --- per-question breakdown, trends,
+  specific improvement actions
+\item
+  \textbf{Progress tracked across sessions} --- are you actually getting
+  better?
+\end{enumerate}
+
+\hypertarget{phase-2-product-general-voice-ai-platform-deferred}{%
+\subsubsection{Phase 2 Product (General Voice AI Platform) ---
+Deferred}\label{phase-2-product-general-voice-ai-platform-deferred}}
+
+Once the voice pipeline is proven and user base established: -
+\textbf{Speaking coach} (presentations, speeches, public speaking
+practice) - \textbf{Language learning} (conversational practice in
+target language) - \textbf{Thinking out loud} (rubber duck debugging
+with a voice AI) - \textbf{General assistant} (the full-breadth voice AI
+use case)
+
+This platform expansion uses identical infrastructure. Only the
+prompting, session logic, and UI differ. This is the architectural
+decision that makes the general platform achievable: we build it right
+once.
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\hypertarget{feature-set-phase-1}{%
+\subsection{6. Feature Set --- Phase 1}\label{feature-set-phase-1}}
+
+\hypertarget{f-001-onboarding-resume-intake}{%
+\subsubsection{F-001: Onboarding \& Resume
+Intake}\label{f-001-onboarding-resume-intake}}
+
+\textbf{What it does:} - User creates account (email/password or Google
+OAuth) - Uploads resume (PDF) --- extracted and stored as structured
+data - Sets target: job title, target companies (optional), experience
+level - Short calibration (3 questions to baseline current skill level)
+
+\textbf{Why it matters:} Personalized interviews require knowing who the
+user is. A generic ``Tell me about a time you showed leadership''
+becomes ``You managed a team at ECS Tech in Kathmandu --- walk me
+through a leadership challenge from that role'' with resume context.
+That specificity is what no current tool has.
+
+\textbf{Technical requirements:} - PDF upload (max 5 MB) → PyMuPDF text
+extraction → LLM structured parsing - Pydantic schema: name,
+experience{[}{]}, education{[}{]}, skills{[}{]}, projects{[}{]} - Stored
+in PostgreSQL JSONB column for flexible querying - Extraction time
+target: \textless{} 10 seconds
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\hypertarget{f-002-session-setup}{%
+\subsubsection{F-002: Session Setup}\label{f-002-session-setup}}
+
+\textbf{What it does:} - Choose interview type: Behavioral / Technical /
+System Design / Mixed - Choose difficulty: Beginner / Intermediate /
+Advanced (or let AI calibrate) - Choose interviewer persona: Friendly /
+Neutral / Challenging / Adversarial - Choose duration: 15 min / 30 min /
+45 min - Optional: paste job description for company-specific tailoring
+
+\textbf{Why it matters:} Difficulty and persona selection creates the
+``social pressure'' simulation that no competitor offers. An adversarial
+interviewer who interrupts and pushes back is a fundamentally different
+experience than a friendly one --- both are necessary preparation.
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\hypertarget{f-003-real-time-voice-session}{%
+\subsubsection{F-003: Real-Time Voice
+Session}\label{f-003-real-time-voice-session}}
+
+\textbf{What it does:} - Push-to-talk or continuous voice input (user
+configurable) - Real-time transcription displayed as user speaks
+(confidence signal) - AI response in \textless{} 2 seconds end-to-end
+(speech → speech) - AI voice: select from 4--6 natural-sounding voices
+(Kokoro TTS) - Barge-in: user can interrupt AI mid-response - Session
+timer visible, question counter visible - Live filler word counter
+(``you've said `um' 4 times this question'')
+
+\textbf{Technical requirements:} - WebSocket connection maintained for
+full session duration - Silero VAD for end-of-utterance detection -
+Deepgram streaming ASR (primary), Faster-Whisper (fallback) - Groq Llama
+70B (primary LLM), Cerebras/Gemini Flash (fallback) - Kokoro TTS for
+response audio - All audio: 16 kHz mono PCM → 32 kbps Opus over
+WebSocket
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\hypertarget{f-004-ai-interviewer-intelligence}{%
+\subsubsection{F-004: AI Interviewer
+Intelligence}\label{f-004-ai-interviewer-intelligence}}
+
+\textbf{What it does:}
+
+The AI doesn't just ask scripted questions. It: - \textbf{Asks
+intelligent follow-ups} based on what you actually said (``You mentioned
+you `worked on' the migration --- were you the lead or a contributor?'')
+- \textbf{Probes for STAR components} when missing (``What was the
+actual outcome? Did it ship?'') - \textbf{Challenges weak answers} when
+in Challenging/Adversarial mode (``That sounds like what the team
+decided --- what would you have done differently?'') -
+\textbf{Transitions naturally} between questions without breaking
+conversational flow - \textbf{Tracks question coverage} --- doesn't ask
+the same topic twice - \textbf{Adapts difficulty} within session based
+on answer quality
+
+\textbf{Why it matters:} This is the core product moat. Any competitor
+can ask ``Tell me about a time you showed leadership.'' Only SpeakPrep
+asks ``You said you `helped coordinate' --- can you tell me what you
+specifically did versus what others did? What was your decision
+authority?'' That's what a real interviewer does.
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\hypertarget{f-005-live-scoring-during-session}{%
+\subsubsection{F-005: Live Scoring (during
+session)}\label{f-005-live-scoring-during-session}}
+
+\textbf{What it displays:} - Filler word count per question (live
+ticker) - Response time per question - Current question score estimate
+(updates after each answer) - Speaking pace indicator (WPM, target:
+140--160)
+
+\textbf{Why it matters:} Real-time feedback changes behavior
+immediately. Seeing ``you've said `um' 7 times'' mid-question triggers
+self-correction in a way post-session feedback cannot.
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\hypertarget{f-006-post-session-report}{%
+\subsubsection{F-006: Post-Session
+Report}\label{f-006-post-session-report}}
+
+\textbf{What it contains:} - Overall session score (0--100) -
+Per-question scores across 5 dimensions: - Content Quality (30\%) ---
+relevance, depth, accuracy - Communication (25\%) --- clarity,
+structure, conciseness - STAR Compliance (20\%) --- all 4 components,
+specificity, results - Confidence Markers (15\%) --- assertive language,
+hedging frequency - Filler Words (10\%) --- rate per minute - Written
+feedback per question: what you did well, what to improve, example of
+better answer - Audio playback of your answer (optional, for
+self-review) - Transcript of full session
+
+\textbf{Why it matters:} The report is what users share, save, and
+reference. It's the ``receipt'' of their practice. Without a detailed
+report, sessions feel disposable.
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\hypertarget{f-007-progress-dashboard}{%
+\subsubsection{F-007: Progress
+Dashboard}\label{f-007-progress-dashboard}}
+
+\textbf{What it shows:} - Score trend over time (line chart per
+dimension) - Total practice time, total questions answered - Strongest
+and weakest dimensions (rolling 30-day) - Filler word frequency trend -
+Response time trend - ``Your STAR compliance has improved 23\% over the
+last 10 sessions'' - Question bank coverage: which topics have you
+practiced, which haven't you touched?
+
+\textbf{Why it matters:} Progress visibility is the primary retention
+mechanism. Users who see improvement continue. Users who feel stuck
+without evidence quit. The dashboard converts single-session users to
+long-term users.
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\hypertarget{f-008-question-bank}{%
+\subsubsection{F-008: Question Bank}\label{f-008-question-bank}}
+
+\textbf{What it contains:} - 500+ curated questions across categories: -
+Behavioral: Leadership, Teamwork, Conflict, Failure, Decision-Making,
+Motivation - Technical: Algorithms, Data Structures, System Concepts,
+Language-Specific - System Design: Common systems (URL shortener, rate
+limiter, chat system, etc.) - Company-Specific: Common patterns from
+Glassdoor/Blind for FAANG, startups - Tagged by: difficulty, category,
+subcategory, company, role level - User-contributed questions (Phase 1.5
+--- after initial launch)
+
+\textbf{Adaptive selection:} Questions selected based on: - User's skill
+gaps from previous sessions - Target company/role context - ELO-based
+difficulty targeting 60--75\% expected success rate - Coverage balance
+(don't over-index on one category)
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\hypertarget{f-009-authentication-user-accounts}{%
+\subsubsection{F-009: Authentication \& User
+Accounts}\label{f-009-authentication-user-accounts}}
+
+\textbf{What it does:} - Email/password registration with email
+verification - Google OAuth (via Supabase Auth) - JWT access tokens
+(15-min) + refresh tokens (7-day httpOnly cookies) - Protected routes on
+frontend - Account settings: email, password change, notification
+preferences - Data export (GDPR compliance) and account deletion
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\hypertarget{f-010-rate-limiting-usage-tiers}{%
+\subsubsection{F-010: Rate Limiting \& Usage
+Tiers}\label{f-010-rate-limiting-usage-tiers}}
+
+\textbf{Free Tier:} - 3 sessions/week (15 min each) - Basic post-session
+report (no audio playback, no full transcript) - 7-day score history
+
+\textbf{Pro Tier (\$12/month):} - Unlimited sessions - Full post-session
+reports with audio playback - 90-day score history with trend charts -
+All interviewer personas and difficulty levels - Company-specific
+question sets - Resume-personalized questions
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\hypertarget{feature-set-phase-2-deferred}{%
+\subsection{7. Feature Set --- Phase 2
+(Deferred)}\label{feature-set-phase-2-deferred}}
+
+These features are explicitly \textbf{NOT built in Phase 1}. Document
+them here so the architecture accommodates them without rework.
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Feature
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Why Deferred
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+When to Build
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Mobile app (iOS/Android) & Audio APIs on React Native are unreliable;
+4--6 weeks of bugs & After web is stable with 100+ DAU \\
+Voice cloning / custom voices & Kokoro doesn't support it; ElevenLabs
+costs money & Phase 2 premium feature \\
+Multi-language support & ASR accuracy drops on non-English; LLM prompts
+need rewrite & Phase 2 after English is solid \\
+Live interview CoPilot & Different product (listen to real interview,
+whisper answers) & Phase 2 --- raises ethical questions too \\
+Speaking coach mode & Same pipeline, different prompts & Phase 2 with
+existing infrastructure \\
+General voice assistant mode & Same pipeline, different prompts & Phase
+2 after core is proven \\
+Team/enterprise accounts & B2B sales motion, different product & Phase
+3 \\
+Video analysis (body language) & Completely different tech stack (CV
+models) & Long-term \\
+\end{longtable}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\hypertarget{user-stories}{%
+\subsection{8. User Stories}\label{user-stories}}
+
+Organized by feature. Format:
+\passthrough{\lstinline!US-[ID]: As a [user], I want to [action], so that [outcome].!}
+
+\hypertarget{onboarding}{%
+\subsubsection{Onboarding}\label{onboarding}}
+
+\begin{itemize}
+\tightlist
+\item
+  \passthrough{\lstinline!US-001!} As a new user, I want to upload my
+  resume so that interview questions are personalized to my experience.
+\item
+  \passthrough{\lstinline!US-002!} As a new user, I want to set my
+  target role and company so that questions are calibrated to what I'm
+  actually preparing for.
+\item
+  \passthrough{\lstinline!US-003!} As a new user, I want a calibration
+  session so that the AI doesn't start me too easy or too hard.
+\end{itemize}
+
+\hypertarget{session}{%
+\subsubsection{Session}\label{session}}
+
+\begin{itemize}
+\tightlist
+\item
+  \passthrough{\lstinline!US-010!} As a user, I want to press a button
+  and speak naturally so that I can practice without typing.
+\item
+  \passthrough{\lstinline!US-011!} As a user, I want to hear the AI
+  respond in a natural voice within 2 seconds so that the conversation
+  feels real.
+\item
+  \passthrough{\lstinline!US-012!} As a user, I want the AI to ask
+  intelligent follow-up questions so that it simulates a real
+  interviewer, not a script.
+\item
+  \passthrough{\lstinline!US-013!} As a user, I want to choose an
+  adversarial interviewer persona so that I can practice high-pressure
+  scenarios.
+\item
+  \passthrough{\lstinline!US-014!} As a user, I want to interrupt the AI
+  when it's talking so that I can correct myself or add information.
+\item
+  \passthrough{\lstinline!US-015!} As a user, I want to see a live
+  filler word counter so that I can self-correct in real time.
+\item
+  \passthrough{\lstinline!US-016!} As a user, I want the AI to probe
+  when I give a vague answer so that I'm forced to be specific.
+\end{itemize}
+
+\hypertarget{scoring-reports}{%
+\subsubsection{Scoring \& Reports}\label{scoring-reports}}
+
+\begin{itemize}
+\tightlist
+\item
+  \passthrough{\lstinline!US-020!} As a user, I want a detailed
+  post-session report so that I know exactly what to improve.
+\item
+  \passthrough{\lstinline!US-021!} As a user, I want to replay my audio
+  answers so that I can hear what the interviewer heard.
+\item
+  \passthrough{\lstinline!US-022!} As a user, I want AI-written example
+  better answers so that I know what ``good'' looks like.
+\item
+  \passthrough{\lstinline!US-023!} As a user, I want per-dimension
+  scores so that I can prioritize what to work on.
+\end{itemize}
+
+\hypertarget{progress}{%
+\subsubsection{Progress}\label{progress}}
+
+\begin{itemize}
+\tightlist
+\item
+  \passthrough{\lstinline!US-030!} As a user, I want a score trend chart
+  so that I can see if I'm actually improving.
+\item
+  \passthrough{\lstinline!US-031!} As a user, I want to see which topics
+  I haven't practiced so that I don't have blind spots.
+\item
+  \passthrough{\lstinline!US-032!} As a user, I want weekly email
+  summaries so that I stay engaged even between sessions.
+\end{itemize}
+
+\hypertarget{account}{%
+\subsubsection{Account}\label{account}}
+
+\begin{itemize}
+\tightlist
+\item
+  \passthrough{\lstinline!US-040!} As a user, I want to sign in with
+  Google so that I don't need another password.
+\item
+  \passthrough{\lstinline!US-041!} As a user, I want to delete my
+  account and all data so that my privacy is protected.
+\end{itemize}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\hypertarget{non-goals}{%
+\subsection{9. Non-Goals}\label{non-goals}}
+
+\textbf{These things will NOT be built in Phase 1. Document them
+explicitly so you don't scope-creep:}
+
+\begin{itemize}
+\tightlist
+\item
+  ❌ Mobile app (iOS or Android)
+\item
+  ❌ Live interview assistance (listening to a real interview and
+  whispering answers)
+\item
+  ❌ Video recording or video analysis
+\item
+  ❌ Custom voice cloning
+\item
+  ❌ Multi-language support (English only)
+\item
+  ❌ Peer-to-peer matching
+\item
+  ❌ Company-specific preparation packs beyond the question bank
+\item
+  ❌ ATS resume scoring
+\item
+  ❌ Coding environment (no code editor/execution)
+\item
+  ❌ Integration with job boards or ATS systems
+\item
+  ❌ Team/enterprise accounts
+\item
+  ❌ Offline/on-device processing
+\end{itemize}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\hypertarget{success-metrics-kpis}{%
+\subsection{10. Success Metrics \& KPIs}\label{success-metrics-kpis}}
+
+\hypertarget{phase-1-launch-criteria-before-calling-it-launched}{%
+\subsubsection{Phase 1 Launch Criteria (before calling it
+``launched'')}\label{phase-1-launch-criteria-before-calling-it-launched}}
+
+\begin{itemize}
+\tightlist
+\item[$\square$]
+  End-to-end voice latency \textless{} 2 seconds for 95\% of turns
+\item[$\square$]
+  ASR word error rate \textless{} 10\% on clean English speech
+\item[$\square$]
+  Session completion rate \textgreater{} 50\% (user reaches end of
+  planned session)
+\item[$\square$]
+  Post-session report generated in \textless{} 30 seconds
+\item[$\square$]
+  Zero data loss on session transcript
+\item[$\square$]
+  Uptime \textgreater{} 99\% over 7-day rolling window
+\end{itemize}
+
+\hypertarget{product-health-metrics-post-launch-weekly-tracking}{%
+\subsubsection{Product Health Metrics (post-launch, weekly
+tracking)}\label{product-health-metrics-post-launch-weekly-tracking}}
+
+\begin{longtable}[]{@{}llll@{}}
+\toprule\noalign{}
+Metric & Week 4 Target & Week 12 Target & Why It Matters \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+DAU & 10 & 50 & Core engagement signal \\
+DAU/MAU & 15\% & 20\% & Retention quality \\
+Sessions per user per week & 2 & 3 & Habit formation \\
+Avg session length & 15 min & 20 min & Depth of engagement \\
+D1 Retention & 20\% & 25\% & First impression quality \\
+D7 Retention & 8\% & 12\% & Product stickiness \\
+Free-to-Pro conversion & 1\% & 4\% & Monetization viability \\
+NPS & - & \textgreater{} 30 & Word of mouth potential \\
+Session completion rate & 55\% & 70\% & Product quality \\
+\end{longtable}
+
+\hypertarget{business-metrics-post-monetization}{%
+\subsubsection{Business Metrics
+(post-monetization)}\label{business-metrics-post-monetization}}
+
+\begin{itemize}
+\tightlist
+\item
+  Monthly Recurring Revenue (MRR)
+\item
+  Customer Acquisition Cost (CAC) --- target \textless{} 3x monthly
+  revenue
+\item
+  Lifetime Value (LTV) --- target \textgreater{} 6 months retention
+\item
+  Churn rate --- target \textless{} 8\%/month
+\end{itemize}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\hypertarget{assumptions-vs.-decisions}{%
+\subsection{11. Assumptions
+vs.~Decisions}\label{assumptions-vs.-decisions}}
+
+This section is critical. It separates what we've \emph{decided} from
+what we're \emph{assuming to be true}. Assumptions must be validated and
+can change. Decisions are architectural commitments.
+
+\hypertarget{assumptions-may-change-validate-as-you-build}{%
+\subsubsection{ASSUMPTIONS (may change --- validate as you
+build)}\label{assumptions-may-change-validate-as-you-build}}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Assumption
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Risk if Wrong
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+How to Validate
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Groq free tier remains usable at our scale & Groq throttles us → need
+paid plan & Monitor rate limit hits weekly \\
+Oracle Cloud ARM capacity available in our region & Can't provision →
+delayed launch & Provision in 2 regions simultaneously \\
+Kokoro TTS quality is sufficient for user retention & Users find voice
+robotic → use Cartesia & User interview, NPS survey after 50 sessions \\
+Browser audio APIs are sufficient for voice capture & Mic quality too
+low for ASR & Test on Chrome/Firefox/Safari/Edge on Day 1 \\
+Users prefer push-to-talk over always-on & Users find push-to-talk
+cumbersome & A/B test both in Phase 1 \\
+English-only is acceptable for launch user base & International users
+churn → limit TAM & Survey first 100 users on language needs \\
+2-second end-to-end latency is acceptable & Users find it too slow →
+kills conversational feel & User test with explicit latency
+measurement \\
+Resume parsing via LLM is accurate enough & Hallucinated resume data
+corrupts questions & Manual audit of first 50 parsed resumes \\
+\end{longtable}
+
+\hypertarget{decisions-architectural-commitments-change-requires-a-new-adr}{%
+\subsubsection{DECISIONS (architectural commitments --- change requires
+a new
+ADR)}\label{decisions-architectural-commitments-change-requires-a-new-adr}}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Decision
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Rationale
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+ADR Reference
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+WebSocket-based real-time architecture & Only option for bidirectional
+audio streaming & ADR-001 \\
+Web-first (no mobile in Phase 1) & Mobile audio APIs add 4--6 weeks of
+bugs & ADR-002 \\
+Hosted LLM providers (not self-hosted) & Self-hosted LLMs too slow on
+CPU for real-time voice & ADR-003 \\
+Groq as primary LLM & Sub-100ms TTFT, free tier, OpenAI-compatible API &
+ADR-004 \\
+Kokoro TTS (self-hosted) & Apache 2.0, CPU-capable, unlimited usage,
+8.5/10 quality & ADR-005 \\
+Deepgram for streaming ASR & Best latency, \$200 free credit, real-time
+WebSocket native & ADR-006 \\
+Supabase for auth + PostgreSQL & Bundles auth, saves weeks of work in
+Phase 1 & ADR-007 \\
+Valkey for session cache & Open-source Redis fork, self-hosted on Oracle
+ARM & ADR-008 \\
+Oracle Cloud ARM as compute & 24 GB RAM, always free, enough for entire
+stack & ADR-009 \\
+Structured latency logging from Day 1 & Can't optimize what you can't
+measure & ADR-010 \\
+\end{longtable}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\hypertarget{risks}{%
+\subsection{12. Risks}\label{risks}}
+
+\hypertarget{technical-risks}{%
+\subsubsection{Technical Risks}\label{technical-risks}}
+
+\textbf{R-001: Real-time latency target is hard to achieve.} Getting
+end-to-end \textless{} 2 seconds is genuinely difficult. It requires
+every pipeline stage to perform near-optimally. \emph{Mitigation:}
+Instrument from Day 1. Have a latency budget per stage. Accept 3 seconds
+for Phase 1 launch, optimize to 2 seconds in Phase 1.5.
+
+\textbf{R-002: ASR accuracy degrades in real conditions.} WER of 5\% in
+benchmarks becomes 10--15\% with background noise, accents, and
+technical vocabulary. \emph{Mitigation:} Deepgram Nova-3 is the most
+robust streaming model. Add Whisper post-processing for technical terms.
+
+\textbf{R-003: Oracle Cloud ARM availability.} Oracle may reclaim
+instances idle \textless{} 20\% CPU or ``Out of Capacity'' on ARM
+provisioning. \emph{Mitigation:} Upgrade to Pay-As-You-Go (free, just
+needs credit card) for better availability. Use keep-alive script to
+maintain CPU activity.
+
+\textbf{R-004: Groq rate limits hit at scale.} Free tier is 30 RPM and
+500K tokens/day per model. At 100 concurrent users, this runs out in
+minutes. \emph{Mitigation:} Multi-provider fallback chain. Monitor rate
+limit hits. Budget \$20/month for paid Groq when needed --- much cheaper
+than OpenAI.
+
+\hypertarget{product-risks}{%
+\subsubsection{Product Risks}\label{product-risks}}
+
+\textbf{R-005: Product feels robotic, not like a real interviewer.} If
+the AI responses are generic, users won't return. \emph{Mitigation:}
+Invest heavily in system prompt design. A/B test prompt variations. Get
+10 real users to give honest feedback before calling it launched.
+
+\textbf{R-006: Low retention.} Career tools have natural ``positive
+churn'' (user gets job, cancels). \emph{Mitigation:} Build for referrals
+(``I used SpeakPrep and got the job --- my friend is looking\ldots{}'').
+Track cohort-based retention, not just raw numbers.
+
+\textbf{R-007: High free-to-paid friction.} EdTech freemium conversion
+averages only 2.6\%. \emph{Mitigation:} Make free tier genuinely useful
+but leave meaningful value in Pro (full reports, audio playback,
+unlimited sessions). Don't cripple free tier to the point of being
+useless.
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\hypertarget{monetization-strategy}{%
+\subsection{13. Monetization Strategy}\label{monetization-strategy}}
+
+\hypertarget{pricing-phase-1}{%
+\subsubsection{Pricing (Phase 1)}\label{pricing-phase-1}}
+
+\textbf{Free Tier --- ``Try it''} - 3 sessions/week, 15 minutes each -
+Basic post-session score (overall + top-level dimensions) - No audio
+playback, no full transcript - 7-day history
+
+\textbf{Pro --- \$12/month or \$89/year (save 38\%)} - Unlimited
+sessions, up to 60 minutes each - Full post-session reports (all 5
+dimensions, per-question breakdown) - Audio playback + full transcript -
+90-day progress history + trend charts - All interviewer personas
+(including adversarial) - Company-specific question sets -
+Resume-personalized questions - Priority support
+
+\hypertarget{why-12month}{%
+\subsubsection{Why \$12/month}\label{why-12month}}
+
+\begin{itemize}
+\tightlist
+\item
+  Below competitor range (\$39--\$148/month)
+\item
+  Cheaper than one hour of human coaching (\$150+)
+\item
+  Comparable to a gym membership --- users understand recurring
+  fitness/skills investment
+\item
+  Low enough to not require approval from a partner/parent
+\item
+  High enough to be a real business at scale: 1,000 Pro users = \$12,000
+  MRR
+\end{itemize}
+
+\hypertarget{revenue-model-sustainability}{%
+\subsubsection{Revenue Model
+Sustainability}\label{revenue-model-sustainability}}
+
+At 1\% free-to-paid conversion with 1,000 active free users: 10 paid
+users × \$12 = \$120 MRR. At 4\% conversion with 5,000 free users: 200
+paid × \$12 = \$2,400 MRR. At 4\% conversion with 25,000 free users:
+1,000 paid × \$12 = \$12,000 MRR (product-market fit territory).
+
+\textbf{Variable cost per Pro user per month:} - Deepgram ASR:
+\textasciitilde\$2 (unlimited sessions, avg 4 sessions/week × 30 min ×
+\$0.0077/min) - Groq LLM: \textasciitilde\$0.50 (avg 200 turns × 500
+tokens × \$0.0008/1K tokens) - Infrastructure: \textasciitilde\$0.01
+(Oracle ARM is free; amortize domain/monitoring) - \textbf{Total
+variable cost: \textasciitilde\$2.50/user/month} - \textbf{Gross margin:
+\textasciitilde79\%} ✓
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\hypertarget{competitive-differentiation}{%
+\subsection{14. Competitive
+Differentiation}\label{competitive-differentiation}}
+
+\hypertarget{why-speakprep-wins-or-at-least-earns-its-users}{%
+\subsubsection{Why SpeakPrep Wins (or at least earns its
+users)}\label{why-speakprep-wins-or-at-least-earns-its-users}}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Dimension
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+SpeakPrep
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+ChatGPT/Claude
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Yoodli
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Final Round AI
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Big Interview
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Real-time voice conversation & ✅ & ❌ (text) & ✅ & ✅ & ❌ \\
+Intelligent probing/follow-ups & ✅ & ❌ & ❌ & Partial & ❌ \\
+Resume-personalized questions & ✅ & Manual setup & ❌ & ❌ & ❌ \\
+Adaptive difficulty & ✅ & ❌ & ❌ & ❌ & ❌ \\
+Progress tracking across sessions & ✅ & ❌ & Basic & ❌ & Basic \\
+Detailed AI scoring rubric & ✅ & Variable & Speech only & ❌ &
+Generic \\
+End-to-end interview coverage & ✅ & Ad hoc & Delivery only & Behavioral
+& Limited \\
+Price & \$12/mo & \$20/mo (Plus) & \$10--20/mo & \$96--148/mo &
+\$39--299 \\
+\end{longtable}
+
+\hypertarget{the-one-sentence-differentiator}{%
+\subsubsection{The One-Sentence
+Differentiator}\label{the-one-sentence-differentiator}}
+
+\begin{quote}
+``SpeakPrep is the only voice AI coach that asks intelligent follow-up
+questions, adapts difficulty to your skill level, and shows you exactly
+how you're improving over time --- for less than the cost of one hour
+with a human coach.''
+\end{quote}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\emph{End of Document 1 --- PRD + Product} \emph{Next: Document 2 ---
+System Design + Architecture} \emph{Cross-reference: All feature IDs
+(F-001 through F-010) and user stories (US-001 through US-041) are
+referenced in Doc 2 and Doc 3.}
+
+\end{document}

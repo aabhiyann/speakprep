@@ -1,0 +1,954 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+\PassOptionsToPackage{dvipsnames,svgnames,x11names}{xcolor}
+%
+\documentclass[
+  11pt,
+]{article}
+\usepackage{amsmath,amssymb}
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math} % this also loads fontspec
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+\usepackage{lmodern}
+\ifPDFTeX\else
+  % xetex/luatex font selection
+  \setmainfont[]{DejaVu Serif}
+  \setmonofont[Scale=0.82]{DejaVu Sans Mono}
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\usepackage[top=2.5cm,bottom=2.5cm,left=2.8cm,right=2.8cm]{geometry}
+\usepackage{listings}
+\newcommand{\passthrough}[1]{#1}
+\lstset{defaultdialect=[5.3]Lua}
+\lstset{defaultdialect=[x86masm]Assembler}
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\ifLuaTeX
+  \usepackage{selnolig}  % disable illegal ligatures
+\fi
+\IfFileExists{bookmark.sty}{\usepackage{bookmark}}{\usepackage{hyperref}}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same}
+\hypersetup{
+  colorlinks=true,
+  linkcolor={blue},
+  filecolor={Maroon},
+  citecolor={Blue},
+  urlcolor={Blue},
+  pdfcreator={LaTeX via pandoc}}
+
+\title{SpeakPrep: Interview Story and Portfolio}
+\author{Abhiyan Sainju}
+\date{April 2026}
+
+\begin{document}
+\maketitle
+
+\hypertarget{speakprep-document-4-interview-story-portfolio-guide}{%
+\section{SpeakPrep --- Document 4: Interview Story + Portfolio
+Guide}\label{speakprep-document-4-interview-story-portfolio-guide}}
+
+\hypertarget{version-1.0-author-abhiyan-sainju-april-2026}{%
+\subsubsection{Version 1.0 \textbar{} Author: Abhiyan Sainju \textbar{}
+April 2026}\label{version-1.0-author-abhiyan-sainju-april-2026}}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\begin{quote}
+\textbf{How to use this doc:} This is your interview prep artifact for
+the project itself. It tells you exactly how to talk about SpeakPrep in
+recruiter screens, technical interviews, and hiring manager
+conversations. Update it as you build --- the best answers come from
+real experiences, not hypothetical ones.
+\end{quote}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\hypertarget{table-of-contents}{%
+\subsection{TABLE OF CONTENTS}\label{table-of-contents}}
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  \protect\hyperlink{1-the-core-narrative}{The Core Narrative}
+\item
+  \protect\hyperlink{2-recruiter-screen-answers}{Recruiter Screen
+  Answers}
+\item
+  \protect\hyperlink{3-hiring-manager-conversation}{Hiring Manager
+  Conversation}
+\item
+  \protect\hyperlink{4-technical-interview-answers}{Technical Interview
+  Answers}
+\item
+  \protect\hyperlink{5-system-design-walkthrough}{System Design
+  Walkthrough}
+\item
+  \protect\hyperlink{6-the-five-key-decisions}{The Five Key Decisions
+  (Memorize These)}
+\item
+  \protect\hyperlink{7-the-three-bug-stories}{The Three Bug Stories}
+\item
+  \protect\hyperlink{8-questions-to-expect--how-to-answer}{Questions to
+  Expect + How to Answer}
+\item
+  \protect\hyperlink{9-portfolio-presentation-guide}{Portfolio
+  Presentation Guide}
+\item
+  \protect\hyperlink{10-what-to-update-as-you-build}{What to Update As
+  You Build}
+\end{enumerate}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\hypertarget{the-core-narrative}{%
+\subsection{1. The Core Narrative}\label{the-core-narrative}}
+
+Every interview answer about SpeakPrep should connect back to one core
+story. Internalize this, then adapt it to each context.
+
+\hypertarget{the-one-paragraph-story}{%
+\subsubsection{The One-Paragraph Story}\label{the-one-paragraph-story}}
+
+\begin{quote}
+``After graduating from GW with my MS in CS, I was going through the job
+search myself and frustrated by the gap between available interview prep
+tools and what an actual interview feels like. So I built SpeakPrep ---
+a real-time voice AI mock interview coach. You speak naturally, the AI
+transcribes your answer, generates an intelligent response through an
+LLM, converts it to speech, and plays it back --- all in under 2 seconds
+end-to-end. I made every technical decision myself: the WebSocket
+architecture, choosing Groq over OpenAI for sub-100ms inference,
+self-hosting Kokoro TTS instead of paying per character, running the
+entire stack on Oracle Cloud's free ARM tier. It's deployed, real users
+have used it, and I can talk through any layer of the system.''
+\end{quote}
+
+\hypertarget{why-this-narrative-works}{%
+\subsubsection{Why This Narrative
+Works}\label{why-this-narrative-works}}
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{Personal motivation} --- not a textbook project, you needed
+  this yourself
+\item
+  \textbf{Technical depth signal} --- you mention specific tradeoffs,
+  not just the tech list
+\item
+  \textbf{Deployed product} --- not a classroom exercise or a GitHub
+  repo nobody uses
+\item
+  \textbf{Ownership} --- ``I made every decision'' --- this is what
+  hiring managers want to hear
+\item
+  \textbf{Concise} --- 6 sentences, leaves room for follow-up questions
+\end{itemize}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\hypertarget{recruiter-screen-answers}{%
+\subsection{2. Recruiter Screen
+Answers}\label{recruiter-screen-answers}}
+
+Recruiters evaluate: communication clarity, relevance to the role,
+enthusiasm.
+
+\hypertarget{tell-me-about-your-most-impressive-project}{%
+\subsubsection{``Tell me about your most impressive
+project''}\label{tell-me-about-your-most-impressive-project}}
+
+Keep to 60--90 seconds. Hit these points in order: 1. What problem it
+solves (1 sentence) 2. What the system does (2--3 sentences) 3. One
+technical challenge you overcame (1--2 sentences) 4. What makes you
+proud of it (1 sentence)
+
+\textbf{Script:}
+
+\begin{quote}
+``My standout project is SpeakPrep, an AI mock interview coach I built
+to solve a problem I was experiencing personally --- existing tools like
+Google Interview Warmup just ask scripted questions with no follow-ups,
+while real interviewers probe and push back. I built a full voice
+pipeline: your speech streams to a Python backend over WebSockets, gets
+transcribed by Deepgram in real time, an LLM generates a contextual
+follow-up question, and Kokoro TTS converts it to audio --- all in under
+two seconds end-to-end. The hardest technical challenge was implementing
+the streaming pipeline so TTS starts generating before the LLM finishes
+--- if I waited for the full response, it would feel like a chatbot, not
+a conversation. I'm proud that it's genuinely deployed and has helped
+people practice before real interviews.''
+\end{quote}
+
+\hypertarget{what-tech-stack-did-you-use}{%
+\subsubsection{``What tech stack did you
+use?''}\label{what-tech-stack-did-you-use}}
+
+Don't just list. Explain one choice.
+
+\begin{quote}
+``Python FastAPI for the backend, WebSockets for real-time bidirectional
+audio, Groq for LLM inference --- specifically because their LPU
+hardware gives me sub-100-millisecond time-to-first-token, which is
+essential for voice. Deepgram for streaming speech recognition, Kokoro
+TTS for synthesis --- that's Apache 2.0 and runs on CPU so I don't pay
+per character. PostgreSQL for persistence, Valkey for session caching,
+Docker for deployment on Oracle Cloud ARM.''
+\end{quote}
+
+\hypertarget{why-did-you-build-this-instead-of-working-on-other-projects}{%
+\subsubsection{``Why did you build this instead of working on other
+projects?''}\label{why-did-you-build-this-instead-of-working-on-other-projects}}
+
+\begin{quote}
+``Honestly? I was in the interview gauntlet myself. I used ChatGPT for
+practice but it doesn't push back --- it accepts whatever you say. Real
+interviewers probe weak answers. I wanted something that simulates that
+pressure, and I knew the technology to build it existed --- streaming
+ASR, fast LLM inference, neural TTS --- they just hadn't been combined
+into a focused product. So I built it, and the process taught me things
+about real-time systems, asyncio, audio pipelines, and production
+deployment that I couldn't get from coursework.''
+\end{quote}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\hypertarget{hiring-manager-conversation}{%
+\subsection{3. Hiring Manager
+Conversation}\label{hiring-manager-conversation}}
+
+Hiring managers evaluate: product thinking, ownership, learning
+velocity, how you'd work on a team.
+
+\hypertarget{walk-me-through-a-product-decision-you-made}{%
+\subsubsection{``Walk me through a product decision you
+made''}\label{walk-me-through-a-product-decision-you-made}}
+
+\begin{quote}
+``The most important product decision was narrowing from `general voice
+AI' to `interview coach specifically.' I was tempted to build something
+broad, but broader means less compelling to any one user. By focusing on
+interview coaching, I had a clear user with a clear pain point --- job
+seekers who need realistic conversational practice --- and a measurable
+outcome: did their scores improve? Did they land the job? That focus
+changed everything downstream: what the system prompt says, what data to
+collect, what the progress dashboard shows. Every feature exists to
+serve that specific workflow.''
+\end{quote}
+
+\hypertarget{what-would-you-have-done-differently}{%
+\subsubsection{``What would you have done
+differently?''}\label{what-would-you-have-done-differently}}
+
+\begin{quote}
+``I'd have instrumented latency earlier. I spent two weeks building
+before I added per-stage timing. When I finally did, I discovered Kokoro
+TTS was my biggest bottleneck --- not Groq or Deepgram as I assumed.
+With earlier data, I would have optimized differently. Also, I'd set up
+VAD from day one instead of using fixed-duration recording. Proper
+end-of-utterance detection changed the conversational feel dramatically.
+Both mistakes cost me time that early measurement would have saved.''
+\end{quote}
+
+\hypertarget{how-did-you-prioritize-what-to-build}{%
+\subsubsection{``How did you prioritize what to
+build?''}\label{how-did-you-prioritize-what-to-build}}
+
+\begin{quote}
+``I had a simple rule: if it doesn't make the voice session feel more
+like a real interview, it waits. Progress dashboards, resume parsing,
+user accounts --- all deferred until the core voice loop was solid. That
+meant Phase 1 was just getting voice in, voice out, end to end. No auth.
+No database. No product UI. Just the pipeline. I find you can always add
+product features on top of a working core, but you can't easily rebuild
+the core under a product that's already launched.''
+\end{quote}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\hypertarget{technical-interview-answers}{%
+\subsection{4. Technical Interview
+Answers}\label{technical-interview-answers}}
+
+Engineers evaluate: problem-solving approach, depth of understanding,
+ability to reason about tradeoffs.
+
+\hypertarget{explain-a-complex-technical-concept-from-your-project-to-a-non-technical-person}{%
+\subsubsection{``Explain a complex technical concept from your project
+to a non-technical
+person''}\label{explain-a-complex-technical-concept-from-your-project-to-a-non-technical-person}}
+
+Use audio pipeline as the example.
+
+\begin{quote}
+``When you speak into SpeakPrep, three things happen in parallel, like
+an assembly line that doesn't wait for the previous station to finish.
+First, your voice is converted into numbers --- 16,000 measurements per
+second --- and streamed to my server over the internet. Second, those
+numbers get converted to text by a speech recognition model. Third, that
+text goes to an AI that generates a response, which gets converted back
+to speech. What makes it feel conversational is that I start
+synthesizing the audio before the AI finishes its full response. As soon
+as the first complete sentence comes out of the AI, I immediately start
+generating the audio for it --- while the AI is still writing the second
+sentence. By the time you've heard sentence one, sentence two is already
+synthesized and ready. That's why it sounds like a real conversation
+rather than waiting for a computer.''
+\end{quote}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\hypertarget{system-design-walkthrough}{%
+\subsection{5. System Design
+Walkthrough}\label{system-design-walkthrough}}
+
+When asked ``Design a real-time voice AI assistant'' --- this is your
+answer.
+
+\hypertarget{the-5-minute-whiteboard-answer}{%
+\subsubsection{The 5-Minute Whiteboard
+Answer}\label{the-5-minute-whiteboard-answer}}
+
+\textbf{Step 1: Clarify requirements (30 seconds)} \textgreater{}
+``Before designing, let me clarify: are we targeting web, mobile, or
+both? How many concurrent users? What's the latency requirement ---
+under 2 seconds for the voice round-trip? And are we building from
+scratch or using external APIs for ASR/LLM/TTS?''
+
+\textbf{Step 2: High-level design (1 minute)}
+
+\begin{lstlisting}
+Client (Browser/Mobile)
+    ↕ WebSocket (audio up, audio down)
+Backend (Python FastAPI)
+    ├── VAD → ASR → LLM → TTS (pipeline)
+    ├── PostgreSQL (sessions, history, scores)
+    └── Redis/Valkey (session state, rate limiting)
+\end{lstlisting}
+
+\begin{quote}
+``I'd choose WebSockets over REST because voice requires bidirectional
+streaming. REST is request-response --- you can't stream audio
+continuously in both directions. WebSockets give me a persistent
+connection where binary audio data flows up and synthesized audio flows
+down simultaneously.''
+\end{quote}
+
+\textbf{Step 3: The pipeline in detail (2 minutes)}
+
+\begin{quote}
+``The pipeline has four stages. First, Voice Activity Detection --- I
+need to know when the user stops speaking before I start transcribing. I
+use Silero VAD, a neural network that outputs speech probability
+continuously. When probability drops below 0.35 for 400ms, I trigger
+transcription.
+\end{quote}
+
+\begin{quote}
+Second, ASR --- I stream the accumulated audio to Deepgram, which is
+purpose-built for streaming with sub-300ms latency. Deepgram returns
+partial transcripts as you speak, which I show in the UI immediately.
+\end{quote}
+
+\begin{quote}
+Third, LLM --- the final transcript goes to Groq running Llama 3.3 70B.
+The critical metric here is time-to-first-token, not throughput. Groq
+achieves under 100ms TTFT on their LPU hardware. I stream the response
+token by token.
+\end{quote}
+
+\begin{quote}
+Fourth, TTS --- I don't wait for the full LLM response. As each sentence
+completes in the token stream, I immediately synthesize it with Kokoro
+TTS and stream the audio to the client. This is the triple-buffer
+pipeline: LLM generates sentence N+1 while TTS synthesizes sentence N
+while the client plays sentence N-1.''
+\end{quote}
+
+\textbf{Step 4: Data layer (30 seconds)}
+
+\begin{quote}
+``PostgreSQL for durable storage: users, sessions, turn transcripts,
+scores. Valkey --- Redis-compatible --- for ephemeral session state:
+active connections, LLM context cache with 1-hour TTL, rate limiting
+counters. The split is important: session state must survive backend
+restarts for reconnection, hence Valkey.''
+\end{quote}
+
+\textbf{Step 5: Scaling (30 seconds)}
+
+\begin{quote}
+``At small scale, a single process handles everything. To scale
+horizontally, the key challenge is WebSocket servers --- persistent
+connections, not stateless. Solution: sticky sessions at the load
+balancer plus Redis pub/sub as a message bus. If user A connects to
+server 1 and sends a message that server 2 needs to process, server 1
+publishes to Redis, server 2 subscribes and responds. Database read
+replicas for analytics queries, connection pooling via asyncpg.''
+\end{quote}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\hypertarget{the-five-key-decisions}{%
+\subsection{6. The Five Key Decisions}\label{the-five-key-decisions}}
+
+Memorize these. Know the context, the alternatives, and the reasoning
+cold.
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\hypertarget{decision-1-websockets-over-rest}{%
+\subsubsection{Decision 1: WebSockets over
+REST}\label{decision-1-websockets-over-rest}}
+
+\textbf{Context:} Needed a protocol for real-time bidirectional audio
+streaming.
+
+\textbf{What you rejected:} REST polling (adds 100ms minimum artificial
+latency, wastes bandwidth, no binary streaming), Server-Sent Events
+(one-directional only), gRPC (excellent for server-to-server but browser
+support requires proxy), WebRTC (designed for P2P video, massive
+overkill and complexity).
+
+\textbf{Why WebSockets:} Bidirectional, binary-capable, universally
+supported in all browsers and React Native, 2-byte frame overhead vs
+700+ bytes for HTTP headers, native async support in FastAPI.
+
+\textbf{The consequence you learned:} Load balancers need sticky
+sessions. Debugging WebSocket issues is harder --- no
+\passthrough{\lstinline!curl!} equivalent, need
+\passthrough{\lstinline!wscat!} or browser devtools WebSocket inspector.
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\hypertarget{decision-2-groq-over-openai-for-llm}{%
+\subsubsection{Decision 2: Groq over OpenAI for
+LLM}\label{decision-2-groq-over-openai-for-llm}}
+
+\textbf{Context:} LLM must respond fast enough for natural voice
+conversation.
+
+\textbf{What you rejected:} OpenAI GPT-4o (300--800ms
+time-to-first-token --- too slow), self-hosted Llama (5--15 tokens/sec
+on CPU --- catastrophically slow for real-time), Gemini Flash (420ms
+TTFT --- borderline).
+
+\textbf{Why Groq:} LPU (Language Processing Unit) hardware designed for
+inference. Sub-100ms TTFT consistently. 315 tokens/sec on Llama 70B.
+Free tier covers development. OpenAI-compatible API so switching
+providers is a config change.
+
+\textbf{The consequence you learned:} Rate limiting at 30 RPM on free
+tier requires a multi-provider fallback chain. LLM quality is Llama 70B,
+not GPT-4o --- calibrated for conversational use where quality
+difference is minimal.
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\hypertarget{decision-3-self-hosted-kokoro-tts-over-elevenlabs}{%
+\subsubsection{Decision 3: Self-Hosted Kokoro TTS over
+ElevenLabs}\label{decision-3-self-hosted-kokoro-tts-over-elevenlabs}}
+
+\textbf{Context:} Need high-quality TTS with no per-character cost at
+launch.
+
+\textbf{What you rejected:} ElevenLabs (10,000 chars/month free ≈ 10
+minutes --- depleted in hours with real users), Cartesia (20,000
+chars/month --- still limited), Google Cloud TTS (4M chars free but 6/10
+quality --- users notice).
+
+\textbf{Why Kokoro:} Apache 2.0 license (commercial use free), ranked
+\#1 on HuggingFace TTS Arena at 8.5/10 quality, runs on CPU at 3--11x
+real-time, 82M parameters (tiny --- fits easily in Oracle ARM's 24 GB),
+unlimited usage. The architectural insight: if you can self-host a model
+of equivalent quality, you should.
+
+\textbf{The consequence you learned:} Must maintain the Docker
+deployment yourself. ARM64 Docker image required --- found
+\passthrough{\lstinline!ghcr.io/remsky/kokoro-fastapi-cpu:latest!} which
+supports arm64.
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\hypertarget{decision-4-oracle-cloud-arm-over-aws-for-compute}{%
+\subsubsection{Decision 4: Oracle Cloud ARM over AWS for
+Compute}\label{decision-4-oracle-cloud-arm-over-aws-for-compute}}
+
+\textbf{Context:} Need always-on compute with enough RAM to run the full
+stack.
+
+\textbf{What you rejected:} AWS EC2 t3.micro (1 GB RAM --- can't fit
+FastAPI + Whisper + Kokoro + Valkey simultaneously), Render free tier
+(512 MB RAM + sleeps after 15 minutes --- breaks WebSocket sessions),
+Railway (killed free tier in 2023).
+
+\textbf{Why Oracle ARM:} 4 OCPUs, 24 GB RAM, genuinely always-free with
+no expiration. Fits entire stack with \textasciitilde20 GB headroom.
+Oracle has maintained this tier since 2019.
+
+\textbf{The consequence you learned:} ARM architecture requires
+\passthrough{\lstinline!--platform linux/arm64!} in Docker builds. Some
+images don't have ARM64 variants --- must build from source. Oracle may
+reclaim instances with CPU \textless{} 20\% --- keep-alive script
+prevents this.
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\hypertarget{decision-5-streaming-pipeline-over-sequential}{%
+\subsubsection{Decision 5: Streaming Pipeline over
+Sequential}\label{decision-5-streaming-pipeline-over-sequential}}
+
+\textbf{Context:} How to minimize perceived latency from voice in to
+voice out.
+
+\textbf{Sequential approach (rejected):} Record audio → transcribe →
+wait for full LLM response → synthesize full audio → play. Total
+latency: 4--8 seconds.
+
+\textbf{Why streaming pipeline:} Start TTS synthesis on sentence 1 while
+LLM is still generating sentence 2 while client plays sentence 0.
+Perceived latency = time to first word of response ≈ 800--1,200ms
+instead of 4--8 seconds. The architectural pattern: decompose the
+pipeline into stages that can overlap rather than waiting for each stage
+to fully complete.
+
+\textbf{The consequence you learned:} Sentence splitting is harder than
+expected. ``Dr.~Smith spent \$3.5M'' splits incorrectly on ``Dr.'' Fix:
+custom sentence splitter with abbreviation awareness. Also: must handle
+LLM generating partial sentences without terminal punctuation --- flush
+remaining buffer at stream end.
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\hypertarget{the-three-bug-stories}{%
+\subsection{7. The Three Bug Stories}\label{the-three-bug-stories}}
+
+Real bugs make you credible. These are the best ones to tell.
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\hypertarget{bug-1-whisper-hallucinating-on-silence}{%
+\subsubsection{Bug 1: Whisper Hallucinating on
+Silence}\label{bug-1-whisper-hallucinating-on-silence}}
+
+\textbf{The situation:} In Phase 1, after implementing the basic
+pipeline, Whisper would output random text whenever the user paused or
+there was background noise. Phrases like ``Thanks for watching. Please
+like and subscribe.'' appeared out of nowhere during silence.
+
+\textbf{Why it happened:} Whisper is trained on internet audio ---
+YouTube videos, podcasts, lectures. When it encounters silence or noise,
+it doesn't output nothing. It outputs what would typically follow that
+pattern in training data. 40.3\% of non-speech audio segments produce
+hallucinations.
+
+\textbf{How I found it:} I was testing and noticed the AI responding to
+things I never said. Logged the transcript and saw gibberish output.
+
+\textbf{The fix:} Multi-layer defense. First: add Silero VAD before
+sending to Whisper --- only send confirmed speech segments. Second:
+check \passthrough{\lstinline!info.no\_speech\_prob > 0.6!} from
+Whisper's own output --- it knows when it's uncertain. Third:
+compression ratio check --- hallucinations are often repetitive text,
+which compresses unusually well.
+
+\textbf{What I learned:} Never trust model output without validation.
+Production audio is nothing like benchmark audio. Models have failure
+modes that only appear in real conditions.
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\hypertarget{bug-2-audio-chunks-playing-out-of-order}{%
+\subsubsection{Bug 2: Audio Chunks Playing Out of
+Order}\label{bug-2-audio-chunks-playing-out-of-order}}
+
+\textbf{The situation:} In Phase 2, users would occasionally hear the
+second sentence of an AI response before the first. ``Hello! Great
+question.'' played as ``Great question! Hello!'' --- jarring and
+confusing.
+
+\textbf{Why it happened:} The streaming pipeline processes sentences
+concurrently. Sentence 1 goes to Kokoro TTS simultaneously with Sentence
+2. Short sentences (``I see.'') synthesize faster than long ones. If
+Sentence 2 is synthesized before Sentence 1, the client receives them
+out of order.
+
+\textbf{How I found it:} A test user mentioned the AI sounded ``like it
+was stuttering'' --- responses weren't making sense. Logged the sequence
+numbers on arriving audio chunks and saw out-of-order arrivals.
+
+\textbf{The fix:} Add a 4-byte sequence number header to every audio
+chunk binary frame. Client maintains a sorted queue --- play in sequence
+order, buffer any out-of-order chunks until the expected sequence
+arrives. Also added a 50ms crossfade between chunks to eliminate audible
+gaps.
+
+\textbf{What I learned:} Concurrent processing requires explicit
+ordering mechanisms. In distributed systems (even within one process),
+arrival order doesn't equal submission order.
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\hypertarget{bug-3-websocket-memory-leak-200-zombie-connections}{%
+\subsubsection{Bug 3: WebSocket Memory Leak --- 200 Zombie
+Connections}\label{bug-3-websocket-memory-leak-200-zombie-connections}}
+
+\textbf{The situation:} After running for a week, the server started
+showing degraded performance. CPU was low, but memory kept climbing. New
+connections started taking longer to establish.
+
+\textbf{Why it happened:} When users navigated away from the browser tab
+without explicitly disconnecting, the browser sent a close frame --- but
+network conditions sometimes caused it to not reach the server. The
+server's connection tracking dict
+(\passthrough{\lstinline!active\_connections!}) accumulated these stale
+entries. After 200 zombie connections, the dict was large enough to
+cause noticeable overhead.
+
+\textbf{How I found it:} New Relic showed memory growing linearly,
+\textasciitilde5 MB per hour. Added logging to the connection dict ---
+saw 200+ entries with no recent heartbeat activity.
+
+\textbf{The fix:} Heartbeat monitoring coroutine. Every 20 seconds, send
+a ping to each connection. If no pong received within 5 seconds, close
+the connection and remove from the dict. Also added
+connection.last\_seen timestamp --- close any connection not active in
+10 minutes.
+
+\textbf{What I learned:} Server resources are finite and non-obvious.
+WebSocket connections are persistent --- unlike HTTP requests they don't
+clean themselves up. Any persistent resource needs an explicit cleanup
+mechanism.
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\hypertarget{questions-to-expect-how-to-answer}{%
+\subsection{8. Questions to Expect + How to
+Answer}\label{questions-to-expect-how-to-answer}}
+
+\hypertarget{why-not-just-use-openais-built-in-voice-features}{%
+\subsubsection{``Why not just use OpenAI's built-in voice
+features?''}\label{why-not-just-use-openais-built-in-voice-features}}
+
+\begin{quote}
+``OpenAI's Advanced Voice Mode is closed-source, costs per minute, and
+locks you into OpenAI's ecosystem. Building from components taught me
+how each layer works and lets me optimize them independently. I can swap
+the ASR layer without changing TTS, or switch LLM providers in a config
+change. The architectural flexibility is valuable --- but the real
+reason was learning. You can't learn how voice AI systems work by using
+a black-box API.''
+\end{quote}
+
+\hypertarget{how-does-this-scale-to-10000-concurrent-users}{%
+\subsubsection{``How does this scale to 10,000 concurrent
+users?''}\label{how-does-this-scale-to-10000-concurrent-users}}
+
+\begin{quote}
+``Today it's a monolith on a single Oracle ARM VM --- that's fine for
+hundreds of concurrent sessions. To scale to 10,000, I'd decompose into
+services: dedicated ASR workers on GPU instances, an LLM gateway with
+provider routing and response caching, a TTS cluster. WebSocket servers
+need to be stateless --- all session state moves to a Redis cluster.
+Load balancers use sticky sessions to route reconnects to the same
+server. PostgreSQL gets read replicas for dashboard queries and
+PgBouncer for connection pooling. The current architecture is already
+designed for this --- WebSocket handlers don't store state locally,
+everything's in Valkey.''
+\end{quote}
+
+\hypertarget{whats-your-biggest-technical-debt}{%
+\subsubsection{``What's your biggest technical
+debt?''}\label{whats-your-biggest-technical-debt}}
+
+\begin{quote}
+``The sentence splitter for the TTS pipeline. I built a regex-based
+heuristic that handles most cases but still breaks on edge cases ---
+mathematical notation, quoted speech, nested parentheses. A proper
+solution would use a small classification model that reads context
+rather than pattern-matching. It would take 2--3 days to fix properly
+and I've deferred it because the current solution handles 95\% of
+interview responses correctly. I'd fix it before scaling to 1,000+
+users.''
+\end{quote}
+
+\hypertarget{how-did-you-test-this}{%
+\subsubsection{``How did you test this?''}\label{how-did-you-test-this}}
+
+\begin{quote}
+``Three levels. Unit tests for pure functions --- the sentence splitter,
+the STAR scorer, the ELO update logic --- with pytest. Integration tests
+for the pipeline stages with real API calls using VCR cassettes to
+replay recorded API responses. And end-to-end tests where I run the full
+voice loop in a headless browser using Playwright, feeding pre-recorded
+audio files and verifying the response arrives within the latency
+budget. I also have manual regression testing --- before every
+deployment, I run 5 test turns across behavioral, technical, and system
+design modes.''
+\end{quote}
+
+\hypertarget{tell-me-about-a-time-you-had-to-make-a-decision-with-incomplete-information}{%
+\subsubsection{``Tell me about a time you had to make a decision with
+incomplete
+information''}\label{tell-me-about-a-time-you-had-to-make-a-decision-with-incomplete-information}}
+
+\begin{quote}
+``When choosing between Deepgram and self-hosted Faster-Whisper for ASR,
+I didn't know if \$200 in Deepgram credits would cover my development
+and early user period. I estimated: 20 test users × 20 minutes/day × 30
+days × \$0.0077/min = \$92. That gave me enough confidence to start with
+Deepgram. I made the decision with a clear understanding of the
+uncertainty and a fallback plan: if credits ran out unexpectedly, I had
+Faster-Whisper working as a fallback from Phase 1. The key was
+quantifying the uncertainty and having a fallback.''
+\end{quote}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\hypertarget{portfolio-presentation-guide}{%
+\subsection{9. Portfolio Presentation
+Guide}\label{portfolio-presentation-guide}}
+
+\hypertarget{github-repository-structure}{%
+\subsubsection{GitHub Repository
+Structure}\label{github-repository-structure}}
+
+\begin{lstlisting}
+speakprep/
+├── README.md              ← CRITICAL — first thing reviewers see
+├── docs/
+│   ├── doc1-prd.md        ← Link from README
+│   ├── doc2-architecture.md
+│   ├── doc3-build-guide.md
+│   └── adr/               ← Individual ADRs
+│       ├── ADR-001-websocket.md
+│       ├── ADR-002-web-first.md
+│       └── ...
+├── backend/
+│   ├── app/
+│   │   ├── main.py
+│   │   ├── services/
+│   │   ├── models/
+│   │   └── api/
+│   ├── tests/
+│   ├── Dockerfile
+│   └── requirements.txt
+├── frontend/
+│   ├── src/
+│   └── package.json
+└── docker-compose.prod.yml
+\end{lstlisting}
+
+\hypertarget{readme.md-template}{%
+\subsubsection{README.md Template}\label{readme.md-template}}
+
+\begin{lstlisting}
+# SpeakPrep — AI Mock Interview Coach
+
+Real-time voice AI that simulates a realistic interview experience. 
+Speak naturally, hear intelligent follow-up questions in <2 seconds.
+
+**Live:** [app.speakprep.com](https://app.speakprep.com)
+**Demo Video:** [2-minute walkthrough](youtube-link)
+
+## Architecture
+
+[Insert system diagram from Doc 2]
+
+Voice pipeline: Browser WebAudio → WebSocket → VAD (Silero) → ASR (Deepgram) → LLM (Groq/Llama 70B) → TTS (Kokoro) → WebSocket → Browser AudioContext
+
+End-to-end latency: ~800–1,400ms (measured, not estimated)
+
+## Key Technical Decisions
+
+| Decision | Choice | Why |
+|---|---|---|
+| Protocol | WebSockets | Bidirectional audio streaming |
+| LLM | Groq/Llama 70B | Sub-100ms time-to-first-token |
+| TTS | Kokoro (self-hosted) | Apache 2.0, CPU-capable, unlimited |
+| Compute | Oracle Cloud ARM | 24 GB RAM, always free |
+
+Full reasoning: [Architecture Decision Records](docs/adr/)
+
+## Running Locally
+
+\`\`\`bash
+git clone https://github.com/abhiyansainju/speakprep
+cd speakprep
+cp .env.example .env  # Add your API keys
+docker compose up -d
+open http://localhost:5173
+\`\`\`
+
+## Tech Stack
+
+Backend: Python 3.12, FastAPI, asyncio, SQLAlchemy, Alembic
+AI: Deepgram (ASR), Groq + Llama 3.3 70B (LLM), Kokoro TTS
+Data: PostgreSQL (Supabase), Valkey (Redis-compatible)
+Infrastructure: Oracle Cloud ARM, Docker, Cloudflare Tunnel, GitHub Actions
+Monitoring: New Relic, Sentry, PostHog
+\end{lstlisting}
+
+\hypertarget{demo-video-script-60-seconds}{%
+\subsubsection{Demo Video Script (60
+seconds)}\label{demo-video-script-60-seconds}}
+
+\begin{lstlisting}
+0–5s:  "SpeakPrep is a real-time AI mock interview coach I built from scratch."
+5–10s: Show the session setup screen — pick behavioral, intermediate, neutral
+10–15s: "I'll start a behavioral session about leadership." Press start.
+15–30s: AI asks opening question. Show waveform while asking.
+30–45s: Speak a 10-second STAR answer into mic. Show transcript appearing in real-time.
+45–55s: AI response plays. Show that it's a follow-up ("You mentioned... can you elaborate?")
+55–60s: Cut to latency metrics display. "800 milliseconds end-to-end."
+\end{lstlisting}
+
+\hypertarget{linkedin-post-template-for-launch}{%
+\subsubsection{LinkedIn Post Template (for
+launch)}\label{linkedin-post-template-for-launch}}
+
+\begin{lstlisting}
+I spent 3 months building a real-time AI mock interview coach — here's what I learned:
+
+The hard part wasn't the AI. It was the plumbing.
+
+Getting voice in → text → LLM response → voice out in under 2 seconds requires:
+• VAD to detect when you stop speaking
+• Streaming ASR (not batch) for real-time transcript
+• LLM with sub-100ms first-token latency (Groq, not OpenAI)
+• TTS that starts generating before LLM finishes
+• WebSockets, not REST, because REST can't stream audio both ways
+
+The most surprising thing I built: a sentence splitter that knows "Dr." isn't a sentence ending but "." followed by a capital letter probably is. Edge cases everywhere.
+
+The project: SpeakPrep — AI mock interview coach
+[link]
+
+Built with: Python FastAPI, Groq, Deepgram, Kokoro TTS, PostgreSQL, Oracle Cloud
+Deployed: yes, actually, with real users
+Cost per month: $0 (by design)
+
+Full architecture writeup in the README if you're curious how it works.
+\end{lstlisting}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\hypertarget{what-to-update-as-you-build}{%
+\subsection{10. What to Update As You
+Build}\label{what-to-update-as-you-build}}
+
+This doc starts as a template. As you actually build SpeakPrep, replace
+every placeholder below with real numbers and real stories.
+
+\hypertarget{update-after-phase-1}{%
+\subsubsection{Update After Phase 1}\label{update-after-phase-1}}
+
+\begin{itemize}
+\tightlist
+\item[$\square$]
+  Replace ``\textasciitilde800--1,400ms'' with your actual measured P50
+  latency
+\item[$\square$]
+  Fill in Bug Story 1 with details from your actual Whisper
+  hallucination experience
+\end{itemize}
+
+\hypertarget{update-after-phase-2}{%
+\subsubsection{Update After Phase 2}\label{update-after-phase-2}}
+
+\begin{itemize}
+\tightlist
+\item[$\square$]
+  Fill in Bug Story 2 with your actual audio ordering issue (or replace
+  with what you actually hit)
+\item[$\square$]
+  Add specific WebSocket edge cases you discovered
+\end{itemize}
+
+\hypertarget{update-after-phase-3}{%
+\subsubsection{Update After Phase 3}\label{update-after-phase-3}}
+
+\begin{itemize}
+\tightlist
+\item[$\square$]
+  Add specific system prompt iteration stories --- what worked, what
+  didn't
+\item[$\square$]
+  Document a specific scoring calibration decision
+\end{itemize}
+
+\hypertarget{update-after-phase-4}{%
+\subsubsection{Update After Phase 4}\label{update-after-phase-4}}
+
+\begin{itemize}
+\tightlist
+\item[$\square$]
+  Add real Oracle Cloud provisioning experience
+\item[$\square$]
+  Document any infrastructure surprises
+\item[$\square$]
+  Fill in actual uptime numbers from UptimeRobot
+\end{itemize}
+
+\hypertarget{update-after-phase-5}{%
+\subsubsection{Update After Phase 5}\label{update-after-phase-5}}
+
+\begin{itemize}
+\tightlist
+\item[$\square$]
+  Add user feedback quotes (with permission)
+\item[$\square$]
+  Document a product decision you made based on user behavior data
+\item[$\square$]
+  Add conversion metrics (free → paid if applicable)
+\end{itemize}
+
+\hypertarget{update-after-phase-6}{%
+\subsubsection{Update After Phase 6}\label{update-after-phase-6}}
+
+\begin{itemize}
+\tightlist
+\item[$\square$]
+  Add load test results (how many concurrent users before degradation?)
+\item[$\square$]
+  Document security review findings
+\item[$\square$]
+  Add ProductHunt/HN launch story
+\end{itemize}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\emph{End of Document 4 --- Interview Story + Portfolio} \emph{All four
+documents together form the complete SpeakPrep Blueprint.}
+\emph{Documents cross-reference each other: PRD (Doc 1) → System Design
+(Doc 2) → Build Guide (Doc 3) → Portfolio Story (Doc 4)}
+
+\end{document}
