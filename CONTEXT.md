@@ -4,8 +4,8 @@
 ## Project: SpeakPrep — Real-time Voice AI Mock Interview Coach
 ## Author: Abhiyan Sainju
 ## Started: April 2026
-## Current Phase: 0 — Environment Setup
-## Current Task: Pre-commit hooks + venv setup
+## Current Phase: 0 — Environment Setup (COMPLETE)
+## Current Task: Phase 0 tagged — ready for Phase 1
 
 ## AGENT SETUP — Run This First Every Session
 **Always activate the Python venv before running any backend commands:**
@@ -15,6 +15,28 @@ source backend/.venv/bin/activate
 - Python 3.12 venv lives at `backend/.venv/` (gitignored)
 - Dev tools (ruff, mypy, pytest, pre-commit) are installed inside it
 - Without activation: wrong Python version, missing packages, pre-commit may fail
+
+## GIT DISCIPLINE — Agents Must Follow This
+**Never use `git add .` or `git add -A`. Always stage granularly.**
+
+### Commit message format
+```
+type(scope): short description (max 72 chars)
+```
+Types: `feat` `fix` `test` `docs` `refactor` `perf` `chore` `revert` `wip`
+Scopes: `audio` `vad` `asr` `llm` `tts` `ws` `api` `auth` `db` `cache` `pipeline` `scoring` `resume` `questions` `dashboard` `ci` `infra`
+
+### Rules
+- One logical unit per commit (one function, one test, one config change)
+- `wip:` commits only on feature branches — never merge to develop
+- Always branch from `develop`, never from `main`
+- Branch naming: `feature/vad-recorder`, `fix/auth-token-expiry`, `chore/update-deps`
+- Delete feature branches after merge
+- Tag each phase completion: `git tag -a v0.X.0-phaseN -m "Phase N complete: ..."`
+
+### Branch protection
+- `main` — requires PR + CI pass + 1 review
+- `develop` — requires CI pass
 
 ## Architecture Summary
 - Backend: Python 3.12, FastAPI, asyncio, WebSockets
@@ -38,7 +60,7 @@ source backend/.venv/bin/activate
 - [x] Dev tools: ruff, mypy, pytest, pytest-asyncio, pytest-cov, pre-commit
 
 ## What's In Progress
-- [x] Pre-commit hooks setup
+- Nothing — Phase 0 complete, Phase 1 not started
 
 ## What's Blocked
 - Nothing
@@ -53,4 +75,4 @@ source backend/.venv/bin/activate
 
 ## Last Updated
 - Date: 2026-04-25
-- By: Abhiyan (setup session)
+- By: Abhiyan (Phase 0 complete)
