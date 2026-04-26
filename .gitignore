@@ -27,6 +27,9 @@ dist/
 build/
 *.tsbuildinfo
 
+# Claude Code
+.claude/
+
 # IDE
 .vscode/settings.json
 .idea/

@@ -54,9 +54,9 @@ pyenv install 3.12.3
 pyenv global 3.12.3
 python --version   # → Python 3.12.3
 
-# 2. Poetry (dependency management)
-curl -sSL https://install.python-poetry.org | python3 -
-poetry --version   # → Poetry 1.8.x
+# 2. pip + virtualenv (dependency management — already installed with Python)
+pip install --upgrade pip
+python -m venv --help > /dev/null && echo "venv available"  # Built into Python 3.12
 
 # 3. Node (for frontend)
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
@@ -139,9 +139,13 @@ touch backend/tests/__init__.py
 touch backend/tests/unit/__init__.py
 touch backend/tests/integration/__init__.py
 
-# Initialize Poetry for backend
+# Set up virtualenv for backend
 cd backend
-poetry init --name speakprep-backend --python "^3.12" --no-interaction
+python -m venv .venv
+source .venv/bin/activate      # Mac/Linux  |  Windows: .venv\Scripts\activate
+pip install --upgrade pip
+touch requirements.txt          # prod deps
+touch requirements-dev.txt      # dev-only deps
 cd ..
 ```
 
@@ -341,7 +345,11 @@ These run automatically before every commit. They catch secrets, bad formatting,
 
 ```bash
 pip install pre-commit gitleaks
-cd backend && poetry add --group dev ruff mypy pytest pytest-asyncio pytest-cov
+cd backend
+source .venv/bin/activate
+pip install ruff mypy pytest pytest-asyncio pytest-cov
+pip freeze > requirements-dev.txt   # Save dev deps
+cd ..
 
 # Create .pre-commit-config.yaml
 cat > .pre-commit-config.yaml << 'EOF'
@@ -439,29 +447,25 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
-        with:
-          version: 1.8.3
-          virtualenvs-in-project: true
-
-      - name: Cache dependencies
+      - name: Cache pip dependencies
         uses: actions/cache@v4
         with:
-          path: backend/.venv
-          key: venv-${{ hashFiles('backend/poetry.lock') }}
+          path: ~/.cache/pip
+          key: pip-${{ hashFiles('backend/requirements.txt', 'backend/requirements-dev.txt') }}
 
       - name: Install dependencies
-        run: poetry install --with dev
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt -r requirements-dev.txt
 
       - name: Lint (ruff)
-        run: poetry run ruff check .
+        run: ruff check .
 
       - name: Format check (ruff format)
-        run: poetry run ruff format --check .
+        run: ruff format --check .
 
       - name: Type check (mypy)
-        run: poetry run mypy app/ --ignore-missing-imports
+        run: mypy app/ --ignore-missing-imports
         continue-on-error: true   # Don't block on type errors in early phases
 
       - name: Run tests
@@ -473,12 +477,12 @@ jobs:
           DEEPGRAM_API_KEY: test-key
           ENVIRONMENT: test
         run: |
-          poetry run pytest tests/ \
+          pytest tests/ \
             -v \
             --cov=app \
             --cov-report=xml \
             --cov-report=term-missing \
-            -x   # Stop on first failure
+            -x
         continue-on-error: true   # Tests may not exist yet in Phase 0
 
       - name: Upload coverage
@@ -894,7 +898,7 @@ Rules:
 - Conventional commits for every change: feat/fix/test/docs/refactor(scope): description
 - Ask me before creating new files I haven't mentioned
 - If you're unsure about architecture, check /docs/ before guessing
-- Run existing tests before and after changes: cd backend && poetry run pytest tests/
+- Run existing tests before and after changes: cd backend && source .venv/bin/activate && pytest tests/
 
 What's the current task in CONTEXT.md?
 ```
@@ -997,7 +1001,7 @@ Implementation requirements:
 Do NOT use:
 - [thing to avoid and why]
 
-Dependencies already available (check pyproject.toml):
+Dependencies already available (check requirements.txt):
 - [dep1, dep2]
 
 After implementing:
@@ -1021,7 +1025,7 @@ Why: [reason for refactor]
 Rules:
 - Do NOT change behavior, only structure
 - All existing tests must still pass after refactor
-- Run `poetry run pytest tests/` before and after, confirm same results
+- Run `pytest tests/` before and after, confirm same results
 - Commit the refactor as one commit: refactor(scope): description
 - Do not add new features during this refactor
 ```
@@ -1119,43 +1123,33 @@ cd backend
 ```
 Set up the Python project dependencies for SpeakPrep backend.
 
-Add these to pyproject.toml using poetry add:
+Make sure the virtualenv is active: source backend/.venv/bin/activate
+
+Install prod dependencies with pip, then save to requirements.txt:
 
 Core:
-- fastapi[standard]>=0.111
-- uvicorn[standard]>=0.29
-- uvloop>=0.19
-- websockets>=12.0
-- python-jose[cryptography]>=3.3     # JWT
-- passlib[bcrypt]>=1.7               # Password hashing
-- httpx>=0.27                        # Async HTTP client
-- pydantic>=2.7                      # Data validation
-- pydantic-settings>=2.2             # Settings management
-- sqlalchemy[asyncio]>=2.0           # ORM
-- asyncpg>=0.29                      # PostgreSQL async driver
-- alembic>=1.13                      # DB migrations
-- structlog>=24.1                    # Structured logging
+pip install fastapi[standard]>=0.111 uvicorn[standard]>=0.29 uvloop>=0.19 \
+  websockets>=12.0 python-jose[cryptography]>=3.3 passlib[bcrypt]>=1.7 \
+  httpx>=0.27 pydantic>=2.7 pydantic-settings>=2.2 \
+  sqlalchemy[asyncio]>=2.0 asyncpg>=0.29 alembic>=1.13 structlog>=24.1
 
 Audio/AI:
-- faster-whisper>=1.0                # Local ASR fallback
-- openai-whisper>=20231117           # For Whisper utilities
-- sounddevice>=0.4                   # Local audio (Phase 1 only)
-- soundfile>=0.12                    # Audio file I/O (Phase 1 only)
-- webrtcvad-wheels>=2.0              # Voice Activity Detection
-- numpy>=1.26                        # Audio array processing
-- deepgram-sdk>=3.5                  # Streaming ASR
-- groq>=0.9                          # LLM provider
+pip install faster-whisper>=1.0 sounddevice>=0.4 soundfile>=0.12 \
+  webrtcvad-wheels>=2.0 numpy>=1.26 deepgram-sdk>=3.5 groq>=0.9
 
-Dev dependencies (--group dev):
-- pytest>=8.0
-- pytest-asyncio>=0.23
-- pytest-cov>=5.0
-- ruff>=0.4
-- mypy>=1.10
-- httpx>=0.27                        # For FastAPI TestClient
+Save prod deps:
+pip freeze > requirements.txt
 
-Run poetry install after adding all deps.
-Commit: chore(deps): add all backend Python dependencies
+Install dev dependencies separately, save to requirements-dev.txt:
+pip install pytest>=8.0 pytest-asyncio>=0.23 pytest-cov>=5.0 \
+  ruff>=0.4 mypy>=1.10
+
+Save dev deps (subtract prod to keep it clean):
+pip freeze > requirements-dev-full.txt
+
+Commit:
+git add requirements.txt requirements-dev.txt
+git commit -m "chore(deps): add all backend Python dependencies"
 ```
 
 #### Task 0.2: First asyncio Exercise
@@ -1392,7 +1386,7 @@ async def transcribe(self, audio: np.ndarray) -> TranscriptionResult | None:
       - no_speech_prob > 0.6 (likely silence or noise)
       - compression_ratio > 2.4 (likely hallucination)
       - transcript is empty after stripping
-    
+
     Runs in thread pool (asyncio.to_thread) so it doesn't block event loop.
     Logs: transcript, no_speech_prob, duration_seconds, latency_ms
     """
@@ -1910,7 +1904,7 @@ class ResumeData(BaseModel):
     top_highlights: list[str]   # For interview personalization
     raw_text: str               # Store original for re-parsing
 
-Add dependency: poetry add pymupdf
+Add dependency: pip install pymupdf && pip freeze > requirements.txt
 
 Tests:
 - Create a simple fake resume as plain text and test the Pydantic parsing logic
