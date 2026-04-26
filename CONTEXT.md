@@ -7,7 +7,7 @@
 ## Started: April 2026
 ## Contributors: Abhiyan Sainju only — no AI tools appear as git contributors
 ## Current Phase: 1 — Local Voice Pipeline
-## Current Task: WebSocket echo server complete, starting real WS handler
+## Current Task: VAD-triggered audio recording (Task 1.1)
 
 ## Architecture Summary
 - Backend: Python 3.12, FastAPI, asyncio, WebSockets
@@ -38,9 +38,14 @@
 - [x] backend/app/main.py — FastAPI app, CORS, health endpoint
 - [x] backend/app/api/ws_echo.py — WebSocket echo server with ping/pong heartbeat
 - [x] backend/tests/integration/test_ws_echo.py — 3 passing integration tests
+- [x] backend/app/utils/async_examples.py — asyncio utilities (gather, retry, timeout)
+- [x] backend/tests/unit/test_async_utils.py — 4 passing unit tests
+- [x] backend/app/audio/understanding.py — PCM/float32 conversion, frame splitting, audio stats
+- [x] backend/tests/unit/test_audio_understanding.py — 7 passing unit tests
+- [x] Phase 0 complete — tagged v0.1.0-phase0
 
 ## What's In Progress
-- WebSocket voice handler (ws.py) — not started
+- VADRecorder (backend/app/audio/vad_recorder.py) — not started
 
 ## What's Blocked
 - Nothing
@@ -48,12 +53,15 @@
 ## Key Files
 - Entry point: backend/app/main.py ✅
 - Echo server: backend/app/api/ws_echo.py ✅
+- Async utils: backend/app/utils/async_examples.py ✅
+- Audio utils: backend/app/audio/understanding.py ✅
 - DB models: backend/app/models/ (not created yet)
-- WebSocket handler: backend/app/api/ws.py (not created yet)
+- WebSocket voice handler: backend/app/api/ws.py (not created yet)
+- VAD recorder: backend/app/audio/vad_recorder.py (not created yet)
 
 ## DO NOT TOUCH
 - Nothing locked yet
 
 ## Last Updated
 - Date: 2026-04-26
-- By: Abhiyan (Phase 0 complete)
+- By: Abhiyan (Phase 0 complete, Phase 1 starting)
