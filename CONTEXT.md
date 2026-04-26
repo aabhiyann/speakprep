@@ -16,6 +16,22 @@ source backend/.venv/bin/activate
 - Dev tools (ruff, mypy, pytest, pre-commit) are installed inside it
 - Without activation: wrong Python version, missing packages, pre-commit may fail
 
+## AGENT HANDOFF PROTOCOL — Do This Before Switching Agents
+1. **Commit current state**
+   ```bash
+   git add -p
+   git commit -m "wip: [what you were doing] — switching agents"
+   ```
+2. **Update CONTEXT.md** — Current Task, What's Working, What's In Progress, What's Blocked
+   ```bash
+   git add CONTEXT.md
+   git commit -m "docs: update CONTEXT.md before agent switch"
+   ```
+3. **Push**
+   ```bash
+   git push origin [current-branch]
+   ```
+
 ## GIT DISCIPLINE — Agents Must Follow This
 **Never use `git add .` or `git add -A`. Always stage granularly.**
 
