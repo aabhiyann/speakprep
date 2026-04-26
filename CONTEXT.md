@@ -4,8 +4,15 @@
 ## Project: SpeakPrep — Real-time Voice AI Mock Interview Coach
 ## Author: Abhiyan Sainju
 ## Started: April 2026
+## Contributors: Abhiyan Sainju only — no AI tools (Claude, Cursor, Codex, Gemini, etc.) appear as git contributors
 ## Current Phase: 0 — Environment Setup (COMPLETE)
 ## Current Task: Phase 0 tagged — ready for Phase 1
+
+## GIT CONTRIBUTOR RULE — Critical
+**Only Abhiyan Sainju appears as a contributor on GitHub. Always.**
+- Never add `Co-Authored-By:` trailers to any commit
+- Never use `--author` flags with AI tool names
+- Commits are made by the user's git identity only
 
 ## AGENT SETUP — Run This First Every Session
 **Always activate the Python venv before running any backend commands:**
