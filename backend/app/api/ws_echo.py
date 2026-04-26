@@ -49,6 +49,12 @@ async def ws_echo(
     try:
         while True:
             message = await websocket.receive()
+
+            if message["type"] == "websocket.disconnect":
+                print(f"Client {client_id} disconnected")
+                log.info("client_disconnected", client_id=client_id)
+                break
+
             text = message.get("text")
             data = message.get("bytes")
 
