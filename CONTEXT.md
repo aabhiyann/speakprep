@@ -6,8 +6,8 @@
 ## Author: Abhiyan Sainju
 ## Started: April 2026
 ## Contributors: Abhiyan Sainju only — no AI tools appear as git contributors
-## Current Phase: 0 — Environment Setup (COMPLETE)
-## Current Task: Phase 0 tagged — ready for Phase 1
+## Current Phase: 1 — Local Voice Pipeline
+## Current Task: WebSocket echo server complete, starting real WS handler
 
 ## Architecture Summary
 - Backend: Python 3.12, FastAPI, asyncio, WebSockets
@@ -35,15 +35,19 @@
 - [x] Branch protection (main + develop)
 - [x] .env.example with all required variables
 - [x] Agent instruction files (CLAUDE.md, AGENTS.md, .cursorrules, copilot-instructions.md)
+- [x] backend/app/main.py — FastAPI app, CORS, health endpoint
+- [x] backend/app/api/ws_echo.py — WebSocket echo server with ping/pong heartbeat
+- [x] backend/tests/integration/test_ws_echo.py — 3 passing integration tests
 
 ## What's In Progress
-- Nothing — Phase 0 complete, Phase 1 not started
+- WebSocket voice handler (ws.py) — not started
 
 ## What's Blocked
 - Nothing
 
 ## Key Files
-- Entry point: backend/app/main.py (not created yet)
+- Entry point: backend/app/main.py ✅
+- Echo server: backend/app/api/ws_echo.py ✅
 - DB models: backend/app/models/ (not created yet)
 - WebSocket handler: backend/app/api/ws.py (not created yet)
 
