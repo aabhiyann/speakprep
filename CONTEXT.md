@@ -5,7 +5,16 @@
 ## Author: Abhiyan Sainju
 ## Started: April 2026
 ## Current Phase: 0 — Environment Setup
-## Current Task: Initial repository setup
+## Current Task: Pre-commit hooks + venv setup
+
+## AGENT SETUP — Run This First Every Session
+**Always activate the Python venv before running any backend commands:**
+```bash
+source backend/.venv/bin/activate
+```
+- Python 3.12 venv lives at `backend/.venv/` (gitignored)
+- Dev tools (ruff, mypy, pytest, pre-commit) are installed inside it
+- Without activation: wrong Python version, missing packages, pre-commit may fail
 
 ## Architecture Summary
 - Backend: Python 3.12, FastAPI, asyncio, WebSockets
@@ -23,10 +32,13 @@
 - Portfolio: /docs/doc4-interview-portfolio.md
 
 ## What's Working
-- [ ] Nothing yet — day 0
+- [x] Git repo initialized and pushed to GitHub
+- [x] Full directory structure (backend + frontend)
+- [x] Python 3.12 venv at backend/.venv
+- [x] Dev tools: ruff, mypy, pytest, pytest-asyncio, pytest-cov, pre-commit
 
 ## What's In Progress
-- [x] Repository setup
+- [x] Pre-commit hooks setup
 
 ## What's Blocked
 - Nothing
