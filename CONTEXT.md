@@ -8,6 +8,12 @@
 ## Current Phase: 0 — Environment Setup (COMPLETE)
 ## Current Task: Phase 0 tagged — ready for Phase 1
 
+## SYNC RULE — Critical
+These 5 files must always contain identical rules:
+`CLAUDE.md` | `AGENTS.md` | `.cursorrules` | `.github/copilot-instructions.md` | `CONTEXT.md`
+
+**When you update any rule, update all 5 files. Project state (below) lives in CONTEXT.md only.**
+
 ## GIT CONTRIBUTOR RULE — Critical
 **Only Abhiyan Sainju appears as a contributor on GitHub. Always.**
 - Never add `Co-Authored-By:` trailers to any commit
