@@ -2,6 +2,34 @@
 
 ---
 
+## 2026-04-26 — Day 2 cont. — Phase 1 Task 1.1: VADRecorder
+
+### What I Built Today
+Created `backend/app/audio/vad_recorder.py` — the `VADRecorder` class that uses WebRTC VAD to detect speech in 20ms audio frames and record from the microphone until sustained silence. Also set up the entire `docs/journey/` documentation structure (BUILD_LOG, DECISIONS, LEARNINGS, BUGS) pre-filled with all Phase 0 material. 8 new unit tests using synthetic WAV files created in-test with soundfile. Total test count is now 22/22 passing.
+
+### What I Learned
+- **The VAD state machine**: two boolean states — `triggered` (has speech started?) and a silence counter. Not triggered → wait for first speech frame → flip to triggered, print "🟢 Speech detected". Triggered → accumulate all frames, count consecutive silence frames, when count ≥ threshold → print "🔇 Silence", break. This pattern is used everywhere in voice AI — it shows up in Deepgram's streaming API, in WebRTC itself, in every turn-detection system.
+- **Why sounddevice import is lazy**: `sounddevice` requires PortAudio at runtime — a C library that might not exist in CI environments. Putting the import inside `record_until_silence` means importing `vad_recorder` at the top of a test file won't fail even if PortAudio is missing. Only calling `record_until_silence()` will hit that import.
+- **`asyncio.to_thread` will matter for Task 1.2**: faster-whisper inference is CPU-bound. Running it directly inside an async function blocks the entire event loop — no other client can be served during transcription. `asyncio.to_thread(fn, *args)` runs `fn` in a thread pool and awaits the result, keeping the event loop free. We'll use this in the LocalASR service.
+
+### What Confused Me
+- **Multi-agent CONTEXT.md lag**: CONTEXT.md wasn't updated after the VAD recorder was merged. This is the handoff protocol gap — the VAD work was done but the context sync didn't happen before the next task prompt arrived. Fixed now. Going forward: every PR merge → update CONTEXT.md in the same branch before closing.
+
+### Decisions Made
+- Lazy sounddevice import to isolate hardware dependency from module-level imports
+- Reuse `split_into_frames` from `understanding.py` in `collect_from_file` rather than reimplementing frame splitting
+- `collect_from_file` method for testability — makes VAD logic unit-testable without a microphone
+
+### How It Feels
+The state machine clicked immediately — it's satisfying when the design from the architecture doc maps directly to clean code. The test suite at 22 green is good momentum going into the ASR service.
+
+### Tomorrow's Plan
+1. Build `LocalASR` at `backend/app/services/asr_local.py`
+2. Use `asyncio.to_thread` for faster-whisper inference
+3. Add hallucination prevention (no_speech_prob > 0.6, compression_ratio > 2.4)
+
+---
+
 ## 2026-04-25 — Day 1 — Phase 0: Repo, Environment, CI/CD, Branch Strategy
 
 ### What I Built Today
