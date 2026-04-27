@@ -7,7 +7,7 @@
 ## Started: April 2026
 ## Contributors: Abhiyan Sainju only — no AI tools appear as git contributors
 ## Current Phase: 1 — Local Voice Pipeline
-## Current Task: LocalASR service with faster-whisper (Task 1.2)
+## Current Task: LLM service with Groq (Task 1.3)
 
 ## Architecture Summary
 - Backend: Python 3.12, FastAPI, asyncio, WebSockets
@@ -52,8 +52,11 @@
 - [x] backend/tests/unit/test_vad_recorder.py — 8 passing unit tests (synthetic WAV fixtures)
 - [x] docs/journey/ — BUILD_LOG, DECISIONS, LEARNINGS, BUGS pre-filled for Phase 0
 
+- [x] backend/app/services/asr_local.py — LocalASR with faster-whisper, hallucination prevention, asyncio.to_thread
+- [x] backend/tests/unit/test_asr_local.py — 8 passing unit tests (WhisperModel mocked)
+
 ## What's In Progress
-- LocalASR service (backend/app/services/asr_local.py) — not started
+- LLM service (backend/app/services/llm_service.py) — not started
 
 ## What's Blocked
 - Nothing
@@ -64,7 +67,7 @@
 - Async utils: backend/app/utils/async_examples.py ✅
 - Audio utils: backend/app/audio/understanding.py ✅
 - VAD recorder: backend/app/audio/vad_recorder.py ✅
-- Local ASR: backend/app/services/asr_local.py (not created yet)
+- Local ASR: backend/app/services/asr_local.py ✅
 - WebSocket voice handler: backend/app/api/ws.py (not created yet)
 - DB models: backend/app/models/ (not created yet)
 
@@ -73,4 +76,4 @@
 
 ## Last Updated
 - Date: 2026-04-26
-- By: Abhiyan (Phase 1 Task 1.1 complete, starting Task 1.2)
+- By: Abhiyan (Phase 1 Task 1.2 complete, starting Task 1.3)
