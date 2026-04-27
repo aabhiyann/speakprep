@@ -1,0 +1,185 @@
+# DECISIONS.md — Technical Decisions Log
+
+Format: ### D-N | Date | Title
+
+---
+
+### D-1 | 2026-04-25 | pip + venv instead of Poetry
+
+**The question I was facing:**
+The dev playbook assumed Poetry for dependency management. Poetry is the modern standard for Python projects and handles virtual environments automatically. Do I use it or switch to plain pip?
+
+**Options I considered:**
+Option A — Poetry: automatic venv management, lock files, dependency groups (prod/dev), good tooling. Cons: another tool to install and learn, adds a `pyproject.toml` abstraction layer, CI setup is slightly different, and I've never used it before.
+Option B — pip + venv manually: standard Python, no extra tools, requirements.txt is universally understood, every tutorial and CI example uses it. Cons: no lock file by default, venv must be activated manually, no dependency groups (manual split into requirements.txt + requirements-dev.txt).
+
+**What I chose:** Option B — pip + venv
+
+**Why:**
+I'm already learning FastAPI, asyncio, WebSockets, voice AI, and cloud deployment simultaneously. Adding Poetry on top means debugging Poetry issues instead of debugging my code. pip is the baseline — it works everywhere, it's what CI expects by default, and every Stack Overflow answer is in pip. When I'm more comfortable with the stack I can migrate.
+
+**What I'm giving up:**
+No automatic lock file for transitive dependencies. `pip freeze > requirements.txt` gives me pinned versions, but it's not as robust as Poetry's `poetry.lock`. Also no automatic venv management — must always run `source backend/.venv/bin/activate` first.
+
+**How I'll know if I was wrong:**
+If dependency conflicts start causing CI failures that are hard to debug, or if I need complex dependency groups that requirements.txt can't express cleanly.
+
+**Interview answer version:**
+"I chose pip over Poetry to reduce cognitive load — I was learning multiple new technologies simultaneously and adding another tool would have meant debugging Poetry instead of my application. The tradeoff is less robust dependency resolution, which I accepted because the project has a stable, well-known dependency set."
+
+---
+
+### D-2 | 2026-04-25 | enforce_admins=false for branch protection
+
+**The question I was facing:**
+GitHub branch protection with `enforce_admins=true` means even the repo owner needs a PR review before merging. For team repos this is essential. But I'm the only contributor. Do I enforce it?
+
+**Options I considered:**
+Option A — enforce_admins=true: maximum protection, no accidental direct pushes even from myself, mirrors what real teams use. Cons: I can't merge my own PRs without a second reviewer, which is impossible when I'm solo.
+Option B — enforce_admins=false: I can merge my own PRs. CI still runs on every PR, ruff/mypy/pytest still gate merges. Only the "second human reviewer" requirement is removed. Cons: slightly less protection against my own mistakes.
+
+**What I chose:** Option B — enforce_admins=false
+
+**Why:**
+CI still runs on every PR. The ruff, mypy, and pytest checks still gate merges — I can't merge broken code. The only thing removed is human review, which I can't provide for myself anyway. The protection that matters (automated quality checks) is still in place.
+
+**What I'm giving up:**
+A second set of eyes on every PR. Any mistake I make in code review I won't catch. If/when collaborators join, I should switch enforce_admins back to true.
+
+**How I'll know if I was wrong:**
+If I accidentally merge something that breaks main because I rubber-stamped my own review.
+
+**Interview answer version:**
+"For a solo project, I kept CI-enforced quality gates (lint, type check, tests) but removed the human review requirement since I can't review my own code. I documented this decision explicitly so the setting can be changed when collaborators join."
+
+---
+
+### D-3 | 2026-04-25 | CONTEXT.md as single source of truth, agent files as rules-only
+
+**The question I was facing:**
+Each AI agent (Claude Code, Cursor, Codex, Copilot) needs instruction files. Should those files contain the full project context (architecture, what's working, what's blocked), or just rules?
+
+**Options I considered:**
+Option A — Full context in each agent file: each file has architecture, stack, what's done, what's next. Agents always have full context without reading another file. Cons: each file is 100+ lines, duplicated everywhere, gets out of sync, eats the agent's context window with information that's already in the file the agent just read.
+Option B — Rules-only in agent files, CONTEXT.md as the single state document: agent files are ~30 lines of mandatory rules (contributor, venv, git, commit format, handoff protocol). CONTEXT.md has all project state and is updated after every task. Cons: agents must be explicitly told to read CONTEXT.md; if they don't, they lack project context.
+
+**What I chose:** Option B — rules-only agent files
+
+**Why:**
+An agent's context window is finite and expensive. A 100-line agent file that repeats the architecture on every session is a waste. The rules (never add Co-Authored-By, always activate venv, never git add -A) are stable and belong in the instruction file. Project state (current task, what's working, what's blocked) changes constantly and belongs in one place that's explicitly updated.
+
+**What I'm giving up:**
+Agents that don't read CONTEXT.md first will lack project context. The instruction files must explicitly say "read CONTEXT.md first" as the first rule.
+
+**Interview answer version:**
+"I separated concerns between instruction files (stable rules: contributor policy, venv activation, git discipline) and CONTEXT.md (dynamic state: current task, what's working, what's blocked). This kept instruction files minimal and put project state in one authoritative place that gets updated with every commit."
+
+---
+
+### D-4 | 2026-04-26 | heartbeat_interval and heartbeat_timeout as query parameters
+
+**The question I was facing:**
+The WebSocket echo server has a 30s heartbeat interval and 5s pong timeout. Testing this would take 35 seconds per test. Should these values be hardcoded or configurable?
+
+**Options I considered:**
+Option A — Hardcoded: simpler code, no parameters to document. Cons: the heartbeat test takes 35 seconds. A test suite that takes 35 seconds to run is a suite you stop running frequently.
+Option B — Query parameters with defaults: `/ws/echo/{id}?heartbeat_interval=1&heartbeat_timeout=1` for tests, `/ws/echo/{id}` uses 30s/5s defaults in production. Cons: slightly more complex signature, query params on WebSocket URLs are unusual.
+
+**What I chose:** Option B — configurable via query params
+
+**Why:**
+Fast tests are tests you actually run. The test completes in ~2 seconds instead of ~35 seconds. The query param approach is clean in FastAPI — it reads exactly like an HTTP query param and defaults to the production values. The production behavior is unchanged.
+
+**What I'm giving up:**
+Slightly unusual API surface — WebSocket URLs with query params aren't commonly seen. Someone reading the URL might be confused. Documented in the test comment.
+
+**Interview answer version:**
+"I made the heartbeat interval a query parameter with a production default so tests could run in 2 seconds instead of 35. Fast feedback loops matter more than a clean URL surface in a development-stage API."
+
+---
+
+### D-5 | 2026-04-25 | retry_with_backoff takes a Callable, not a Coroutine
+
+**The question I was facing:**
+`retry_with_backoff` needs to re-run the operation on each retry. Should it accept a coroutine (the result of calling an async function) or a callable (the function itself)?
+
+**Options I considered:**
+Option A — Accept a Coroutine: caller passes `retry_with_backoff(fetch_data())`. Simpler call site. Cons: a coroutine is a one-time use object. Once it's been awaited (or failed), it's done. You can't re-run it. Retrying a coroutine would either silently return a stale result or raise an error.
+Option B — Accept a Callable: caller passes `retry_with_backoff(fetch_data)`. Slightly more awkward (no parentheses at call site). But on each retry, the function calls `coro_func()` to get a fresh coroutine, which starts the operation from scratch.
+
+**What I chose:** Option B — Callable
+
+**Why:**
+The whole point of retry is re-running the operation. A coroutine can't be re-run. This is a correctness requirement, not a preference. Using a coroutine would produce silently wrong behavior.
+
+**What I'm giving up:**
+Slightly less convenient call site. Caller must remember not to add `()` when passing the function. Easy to confuse once, but the type signature catches it: `Callable[[], Coroutine]` not `Coroutine`.
+
+**Interview answer version:**
+"retry_with_backoff takes a callable, not a coroutine, because a coroutine is a one-time-use object — you can't re-run it. To retry the operation you need to call the function again to get a fresh coroutine each time. This is a correctness requirement."
+
+---
+
+### D-6 | 2026-04-26 | websocket.receive() instead of receive_text() or receive_bytes()
+
+**The question I was facing:**
+FastAPI/Starlette offers typed receive methods: `receive_text()`, `receive_bytes()`, and the raw `receive()`. Which to use in the main loop of the echo server?
+
+**Options I considered:**
+Option A — `receive_text()` / `receive_bytes()`: cleaner, self-documenting. Cons: each method only handles one type. To handle both text and binary you'd need two separate code paths, and more critically, neither handles the disconnect message — they raise an exception on disconnect rather than returning the message dict.
+Option B — Raw `receive()`: returns a dict with `type`, `text`, or `bytes` fields. Handles all message types in one place. With Starlette 1.x, the disconnect message (`{"type": "websocket.disconnect"}`) is returned as a normal message, not raised as an exception.
+
+**What I chose:** Option B — raw `receive()`
+
+**Why:**
+Starlette 1.x changed disconnect behavior: `receive()` returns the disconnect message as a dict instead of raising `WebSocketDisconnect`. Using the typed helpers would make the disconnect case raise `RuntimeError: Cannot call receive once a disconnect message has been received` — because the typed helper calls `receive()` internally, gets the disconnect dict, and then the state machine is in DISCONNECTED state, so any subsequent call raises. The raw `receive()` lets you handle the disconnect explicitly with a type check.
+
+**What I'm giving up:**
+Less obvious code. A reader who doesn't know about the Starlette 1.x change will find the raw dict handling confusing. This is exactly why the BUGS.md entry exists — so future me (and other agents) know why this decision was made.
+
+**Interview answer version:**
+"I used raw `receive()` instead of `receive_text()` because Starlette 1.x changed how disconnects work — they return a message dict instead of raising an exception. The raw method lets you explicitly check the message type and handle all cases without the state machine error."
+
+---
+
+### D-7 | 2026-04-26 | Cast to int32 before abs() in audio_stats
+
+**The question I was facing:**
+Computing max amplitude requires `np.abs()` on an int16 audio array. Should I cast to a larger type first?
+
+**Options I considered:**
+Option A — `np.abs(audio_int16)` directly: simpler, one line. Cons: silent integer overflow. `abs(-32768)` in int16 is undefined because +32768 doesn't fit in int16 (max is 32767). NumPy wraps around and returns -32768, so the max amplitude of the loudest possible sample reports as a negative number.
+Option B — `audio_int16.astype(np.int32)` first, then `np.abs()`: one extra line but correct. int32 can hold +32768 without overflow.
+
+**What I chose:** Option B — cast to int32 first
+
+**Why:**
+Correctness. Silent data corruption that happens to look plausible (wrong but reasonable-looking numbers) is the worst kind of bug. The amplitude of the loudest possible int16 sample reporting as -32768 instead of 32768 would make silence detection wrong in edge cases.
+
+**What I'm giving up:**
+One extra line of code. Trivial.
+
+**Interview answer version:**
+"I cast int16 audio to int32 before taking absolute values because `abs(-32768)` overflows int16 — the result wraps to -32768 instead of 32768. This is silent data corruption that would make the max amplitude of the loudest sample report as a large negative number."
+
+---
+
+### D-8 | 2026-04-26 | Divide by 32768 (not 32767) in pcm_to_float32
+
+**The question I was facing:**
+When normalizing int16 PCM to float32 [-1.0, 1.0], what number do you divide by? The min int16 value is -32768, the max is 32767. They're not symmetric.
+
+**Options I considered:**
+Option A — Divide by 32767: the max positive value maps exactly to +1.0. But -32768 / 32767 = -1.0000305..., which is slightly outside [-1.0, 1.0]. Some audio processing code breaks on values outside that range.
+Option B — Divide by 32768: the most negative value maps exactly to -1.0 (32768/32768). The most positive value maps to 32767/32768 ≈ 0.99997, never quite reaching +1.0. The range is guaranteed to be within [-1.0, 1.0].
+
+**What I chose:** Option B — divide by 32768
+
+**Why:**
+The float32 output is guaranteed to stay within [-1.0, 1.0]. Downstream audio processing libraries (Faster-Whisper, numpy FFT, etc.) expect normalized float audio in that range and may produce incorrect results or errors on values outside it. Losing 0.003% of precision on the positive side is not a meaningful tradeoff.
+
+**What I'm giving up:**
+The positive side can never exactly reach +1.0 (32767/32768 ≈ 0.99997). In practice this is inaudible and computationally irrelevant.
+
+**Interview answer version:**
+"I divide by 32768 not 32767 when normalizing PCM to float32 because it guarantees output stays within [-1.0, 1.0]. Dividing by 32767 would map the most negative sample to -1.0000305, which is outside the range that audio processing libraries expect."

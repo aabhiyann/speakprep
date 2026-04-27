@@ -24,6 +24,11 @@
 - Build Guide: /docs/doc3-build-guide-curriculum.md
 - Portfolio: /docs/doc4-interview-portfolio.md
 - Dev Playbook: /docs/doc5-dev-playbook.md
+- Doc Prompts: /docs/doc6 (LaTeX source — use doc6 prompts for build log, decisions, learnings, blog posts)
+- Build Log: /docs/journey/BUILD_LOG.md
+- Decisions: /docs/journey/DECISIONS.md
+- Learnings: /docs/journey/LEARNINGS.md
+- Bugs: /docs/journey/BUGS.md
 
 ## What's Working
 - [x] Git repo initialized and pushed to GitHub
