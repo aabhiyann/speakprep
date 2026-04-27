@@ -175,3 +175,21 @@ class LLMService:
         content = response.choices[0].message.content or ""
         tokens = response.usage.total_tokens if response.usage else 0
         return content, tokens
+
+    async def _call_cerebras(
+        self,
+        provider: _Provider,
+        messages: list[Message],
+        max_tokens: int,
+        temperature: float,
+    ) -> tuple[str, int]:
+        # Cerebras exposes an OpenAI-compatible chat completions API
+        response = await provider.client.chat.completions.create(
+            model=provider.model,
+            messages=[m.model_dump() for m in messages],
+            max_tokens=max_tokens,
+            temperature=temperature,
+        )
+        content = response.choices[0].message.content or ""
+        tokens = response.usage.total_tokens if response.usage else 0
+        return content, tokens
