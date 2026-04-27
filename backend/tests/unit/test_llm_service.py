@@ -2,11 +2,42 @@
 
 from __future__ import annotations
 
+import os
+from unittest.mock import MagicMock, patch
+
 
 from app.services.llm_service import (
     CircuitBreaker,
+    LLMService,
+    Message,
     _CBState,
 )
+
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+
+def _groq_response(content: str = "Great answer.", tokens: int = 42) -> MagicMock:
+    response = MagicMock()
+    response.choices[0].message.content = content
+    response.usage.total_tokens = tokens
+    response.model = "llama-3.3-70b-versatile"
+    return response
+
+
+def _make_service(groq_mock: MagicMock) -> LLMService:
+    """Build an LLMService with only a mocked Groq client."""
+    with patch.dict(os.environ, {"GROQ_API_KEY": "test-key"}):
+        with patch("app.services.llm_service.AsyncGroq", return_value=groq_mock):
+            return LLMService()
+
+
+MESSAGES = [
+    Message(role="system", content="You are an interview coach."),
+    Message(role="user", content="Tell me about yourself."),
+]
 
 
 # ---------------------------------------------------------------------------
