@@ -291,3 +291,41 @@ class LLMService:
                     "llm.provider.failure", provider=provider.name, error=str(exc)
                 )
         raise RuntimeError("All LLM providers failed or circuit breakers are open")
+
+    async def _stream_provider(
+        self,
+        provider: _Provider,
+        messages: list[Message],
+        max_tokens: int,
+        temperature: float,
+    ):
+        if provider.name in ("groq", "cerebras"):
+            stream = await provider.client.chat.completions.create(
+                model=provider.model,
+                messages=[m.model_dump() for m in messages],
+                max_tokens=max_tokens,
+                temperature=temperature,
+                stream=True,
+            )
+            async for chunk in stream:
+                delta = chunk.choices[0].delta.content
+                if delta:
+                    yield delta
+        elif provider.name == "gemini":
+            contents, system_instruction = self._to_gemini_messages(messages)
+            config = genai.GenerationConfig(
+                max_output_tokens=max_tokens, temperature=temperature
+            )
+            model = (
+                genai.GenerativeModel(
+                    provider.model, system_instruction=system_instruction
+                )
+                if system_instruction
+                else provider.client
+            )
+            response = await model.generate_content_async(
+                contents, generation_config=config, stream=True
+            )
+            async for chunk in response:
+                if chunk.text:
+                    yield chunk.text
