@@ -81,6 +81,12 @@
 - Tests grouped by what they cover (e.g., "tests for hallucination filters" separate from "tests for valid output")
 - CONTEXT.md and docs always in their own separate commits
 
+## PR Merge Strategy
+- **feature → develop**: always "Create a merge commit" (preserves all function-level commits in git log develop)
+- **develop → main**: "Squash and merge" (one clean release commit per phase milestone)
+- NEVER squash feature PRs into develop — it destroys the learning journal
+- GitHub repo settings: both merge commit + squash enabled, rebase disabled
+
 ## DO NOT TOUCH
 - Nothing locked yet
 

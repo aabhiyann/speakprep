@@ -4,6 +4,31 @@ Format: ### BUG-N | Date | Title
 
 ---
 
+### BUG-10 | 2026-04-27 | ruff silently removed `import pytest` causing test collection failure
+
+**Phase:** Phase 1 — Task 1.3 (LLMService tests)
+**Time to fix:** ~5 minutes
+
+**The symptom:**
+First commit of `test_llm_service.py` only contained the CircuitBreaker tests — no async tests, no `@pytest.mark.asyncio`, so `import pytest` was technically unused at that point. ruff's pre-commit hook auto-removed it. The commit succeeded. On the second commit, I added `@pytest.mark.asyncio` decorators which require pytest. Running tests gave `ERROR: NameError: name 'pytest' is not defined` — pytest couldn't even collect the file, let alone run it.
+
+**My debugging process:**
+Ran `python -m pytest tests/unit/test_llm_service.py -v` and saw the collection error pointing to the line with `@pytest.mark.asyncio`. Checked the top of the file and noticed `import pytest` was missing — ruff had removed it on the previous commit.
+
+**The fix:**
+Re-added `import pytest` explicitly alongside `from unittest.mock import AsyncMock, MagicMock, patch`. Committed again. Tests collected and ran correctly.
+
+**Why it happened:**
+ruff's `F401` rule removes unused imports. On the first commit, `pytest` truly was unused (no `pytest.mark`, no `pytest.approx`, no `pytest.raises`). ruff was technically correct. The bug was committing an intermediate state where the import wasn't needed yet.
+
+**How to prevent it:**
+When building a test file incrementally across commits, either: (a) write the first test using pytest directly (e.g. `assert result == pytest.approx(0.7)`) so the import stays, or (b) add a `# noqa: F401` comment temporarily, or (c) commit the full test file in one go once it's complete.
+
+**Interview answer version:**
+"ruff removed an unused import between two commits. The first commit had no pytest-specific assertions; the second added @pytest.mark.asyncio decorators. Lesson: don't commit intermediate states where imports are genuinely unused — either use them from the first commit or finish the file before committing."
+
+---
+
 ### BUG-1 | 2026-04-25 | Accidentally installed dev tools into system Python instead of venv
 
 **Phase:** Phase 0 — Task 0.1 (dependencies)
