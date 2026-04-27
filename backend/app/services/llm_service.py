@@ -50,3 +50,24 @@ class CircuitBreaker:
             return False
         self._half_open_in_flight = True
         return True
+
+    def record_success(self) -> None:
+        self._failures = 0
+        self._half_open_in_flight = False
+        self._state = _CBState.CLOSED
+
+    def record_failure(self) -> None:
+        self._half_open_in_flight = False
+        if self._state == _CBState.HALF_OPEN:
+            # test request failed — go back to OPEN
+            self._state = _CBState.OPEN
+            self._opened_at = self._clock()
+        elif self._state == _CBState.CLOSED:
+            self._failures += 1
+            if self._failures >= self._failure_threshold:
+                self._state = _CBState.OPEN
+                self._opened_at = self._clock()
+
+    @property
+    def state(self) -> _CBState:
+        return self._state
