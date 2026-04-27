@@ -3,23 +3,11 @@
 from __future__ import annotations
 
 import time
+from dataclasses import dataclass, field
 from enum import Enum
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel
-
-
-class Message(BaseModel):
-    role: Literal["system", "user", "assistant"]
-    content: str
-
-
-class LLMResponse(BaseModel):
-    content: str
-    provider: str
-    model: str
-    latency_ms: int
-    tokens_used: int
 
 
 class _CBState(str, Enum):
@@ -87,3 +75,26 @@ class CircuitBreaker:
     @property
     def state(self) -> _CBState:
         return self._state
+
+
+class Message(BaseModel):
+    role: Literal["system", "user", "assistant"]
+    content: str
+
+
+class LLMResponse(BaseModel):
+    content: str
+    provider: str
+    model: str
+    latency_ms: int
+    tokens_used: int
+
+
+@dataclass
+class _Provider:
+    """Bundles an SDK client with its model name and circuit breaker."""
+
+    name: str
+    client: Any
+    model: str
+    circuit_breaker: CircuitBreaker = field(default_factory=CircuitBreaker)
