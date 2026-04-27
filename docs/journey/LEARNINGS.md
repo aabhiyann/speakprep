@@ -4,6 +4,142 @@ Format: ### Concept — Date / Explanation
 
 ---
 
+### Circuit breaker pattern — what it is and why it exists — 2026-04-27
+
+**The confusion before:**
+I heard "circuit breaker" and thought it was something complex. It's actually a simple state machine that solves one specific problem: when a dependency (an API, a database) is failing, stop wasting time and resources trying to call it over and over.
+
+**The mental model that works:**
+Think of an electrical circuit breaker in your house. When too much current flows, the breaker trips — it opens the circuit and stops all electricity. You reset it after the problem is fixed. Software circuit breakers work identically:
+
+```
+CLOSED (normal) → 3rd consecutive failure → OPEN (blocking all requests)
+OPEN → 60 seconds pass → HALF_OPEN (allow one test request)
+HALF_OPEN → success → CLOSED
+HALF_OPEN → failure → OPEN (reset timer)
+```
+
+In CLOSED state, track consecutive failures. When failures hit the threshold, OPEN the circuit — every subsequent request is rejected immediately (microseconds, not after a 5-second API timeout). After the recovery timeout, go HALF_OPEN: let one request through as a test. The injectable clock `_clock=time.time` means tests can fast-forward time without sleeping.
+
+**Why it matters:**
+Without a circuit breaker, if Groq is down: every request waits 5-30 seconds for the Groq timeout before trying Cerebras. With 100 concurrent users, that's thousands of seconds wasted per minute. With a circuit breaker: after 3 failures, Groq is skipped instantly.
+
+**One deep read:** Search "martinfowler.com circuit breaker" — Martin Fowler's original article.
+
+---
+
+### Async generators — yield inside async def — 2026-04-27
+
+**The confusion before:**
+I knew `yield` makes a generator. I knew `async def` makes a coroutine. What happens when you combine them?
+
+**The mental model that works:**
+A regular generator produces values one at a time. An async generator does the same, but can `await` between yields:
+
+```python
+async def stream_tokens(api_response):
+    async for chunk in api_response:
+        yield chunk.text  # caller gets this token immediately
+
+async for token in stream_tokens(response):  # async for — note the async
+    send_to_client(token)
+```
+
+The type is `AsyncGenerator[str, None]`. It satisfies `AsyncIterator[str]`. Each `yield` delivers a token to the caller the moment it arrives from the API — the user sees text appearing word by word rather than waiting for the full response.
+
+In tests, you can collect all yielded values: `chunks = [c async for c in service.stream(messages)]`.
+
+The fallback path in `stream()` calls `await self.generate()` and then `yield response.content` — yields the full response as one chunk. The caller doesn't know or care whether it came from streaming or not.
+
+**One deep read:** PEP 525 — Asynchronous Generators (python.org/dev/peps/pep-0525)
+
+---
+
+### AsyncMock vs MagicMock — testing async functions — 2026-04-27
+
+**The confusion before:**
+Used `MagicMock` for everything. Tests crashed with "object MagicMock is not awaitable."
+
+**The mental model that works:**
+`MagicMock()` fakes a synchronous callable — calling it returns a value immediately.
+`AsyncMock()` fakes an `async def` function — calling it returns a coroutine, which when awaited returns the configured value.
+
+```python
+# Wrong — MagicMock is not awaitable
+mock.create = MagicMock(return_value=response)
+result = await mock.create(...)  # TypeError: object MagicMock is not awaitable
+
+# Correct — AsyncMock returns a coroutine
+mock.create = AsyncMock(return_value=response)
+result = await mock.create(...)  # works
+```
+
+Rule: **any method your code calls with `await` must be faked with `AsyncMock`.** Everything else uses `MagicMock`.
+
+For raising exceptions from async mocks: `AsyncMock(side_effect=RateLimitError(...))` — when awaited, raises the exception instead of returning a value.
+
+**One deep read:** Python docs — `unittest.mock.AsyncMock`
+
+---
+
+### Structured logging with structlog — 2026-04-27
+
+**The confusion before:**
+`print()` or `logging.info("Groq took 234ms")` — what's wrong with that?
+
+**The mental model that works:**
+String logs are for humans at a terminal. Structured logs are for machines querying a log system.
+
+```python
+# String log — un-queryable
+logger.info("Groq call succeeded in 234ms using 50 tokens")
+
+# Structured log — key-value pairs
+logger.info("llm.call.success", provider="groq", latency_ms=234, tokens_used=50)
+```
+
+In a log aggregation system (Grafana, Datadog), you can filter: `latency_ms > 500`. With string logs, that requires regex. With structured logs, it's a simple field query. You can build dashboards: "average latency by provider over time" — trivial with structured, painful with strings.
+
+Usage pattern in this project:
+```python
+import structlog
+logger = structlog.get_logger(__name__)
+logger.info("llm.call.success", provider=provider.name, latency_ms=latency_ms)
+logger.warning("llm.provider.failure", provider=provider.name, error=str(exc))
+```
+
+**One deep read:** structlog.readthedocs.io — Getting Started guide
+
+---
+
+### Squash merge vs create a merge commit — git strategy — 2026-04-27
+
+**The confusion before:**
+I'd been using "Squash and merge" on GitHub for every PR. Then I noticed `git log develop` showed one commit per PR, not 19. My function-level commits were gone.
+
+**The mental model that works:**
+
+**Squash merge:** collapses all N commits in a feature branch into one new commit on the base branch. Clean history, but you lose granularity.
+
+**Create a merge commit:** all N commits appear on the base branch, connected by a merge commit. You can see the full granular history with `git log`.
+
+```
+Squash:  develop: A → B → "feat(llm): LLM service"  (19 commits hidden inside)
+Merge:   develop: A → B → M
+                          |\
+                          | feat(llm): add stream()
+                          | feat(llm): add generate()
+                          | ... 17 more commits
+```
+
+**Decision for this project:**
+- feature → develop: "Create a merge commit" — all function-level commits visible in `git log develop`
+- develop → main: "Squash and merge" — one clean release commit per phase
+
+The function-level commits ARE the learning journal. Squashing them into develop defeats their purpose.
+
+---
+
 ### Whisper's architecture — encoder-decoder, mel spectrogram, why 30s limit — 2026-04-26
 
 **The confusion before:**
