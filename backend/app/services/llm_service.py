@@ -329,3 +329,28 @@ class LLMService:
             async for chunk in response:
                 if chunk.text:
                     yield chunk.text
+
+    async def stream(
+        self,
+        messages: list[Message],
+        max_tokens: int = 200,
+        temperature: float = 0.7,
+    ):
+        for provider in self._providers:
+            if not provider.circuit_breaker.is_available():
+                continue
+            try:
+                async for chunk in self._stream_provider(
+                    provider, messages, max_tokens, temperature
+                ):
+                    yield chunk
+                provider.circuit_breaker.record_success()
+                return
+            except Exception as exc:
+                provider.circuit_breaker.record_failure()
+                logger.warning(
+                    "llm.stream.failure", provider=provider.name, error=str(exc)
+                )
+        # all streaming attempts failed — fall back to a single non-streaming call
+        response = await self.generate(messages, max_tokens, temperature)
+        yield response.content
