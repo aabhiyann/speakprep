@@ -71,9 +71,15 @@
 - WebSocket voice handler: backend/app/api/ws.py (not created yet)
 - DB models: backend/app/models/ (not created yet)
 
+## Commit Convention
+- **Function-level granularity**: one commit per method, class, or constant — NOT one commit per file
+- Each method gets its own `feat(scope): add MethodName` commit
+- Tests grouped by what they cover (e.g., "tests for hallucination filters" separate from "tests for valid output")
+- CONTEXT.md and docs always in their own separate commits
+
 ## DO NOT TOUCH
 - Nothing locked yet
 
 ## Last Updated
 - Date: 2026-04-26
-- By: Abhiyan (Phase 1 Task 1.2 complete, starting Task 1.3)
+- By: Abhiyan (Phase 1 Task 1.2 complete, starting Task 1.3; added function-level commit convention)
