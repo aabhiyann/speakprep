@@ -33,3 +33,20 @@ class CircuitBreaker:
         self._failures = 0
         self._opened_at: float | None = None
         self._half_open_in_flight = False
+
+    def is_available(self) -> bool:
+        """Return True if a request should be allowed through."""
+        if self._state == _CBState.CLOSED:
+            return True
+
+        if self._state == _CBState.OPEN:
+            if self._clock() - (self._opened_at or 0) >= self._recovery_timeout:
+                self._state = _CBState.HALF_OPEN
+            else:
+                return False
+
+        # HALF_OPEN: allow exactly one in-flight request
+        if self._half_open_in_flight:
+            return False
+        self._half_open_in_flight = True
+        return True
