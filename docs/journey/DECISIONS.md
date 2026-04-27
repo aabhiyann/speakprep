@@ -4,6 +4,105 @@ Format: ### D-N | Date | Title
 
 ---
 
+### D-13 | 2026-04-27 | _Provider as dataclass not abstract base class
+
+**The question I was facing:**
+Three providers (Groq, Cerebras, Gemini) each have different SDK clients and models. How do I abstract over them so `generate()` can iterate them uniformly without giant if/elif chains everywhere?
+
+**Options I considered:**
+Option A — Abstract base class (ABC): define `BaseProvider` with `@abstractmethod complete(...)` and `@abstractmethod stream(...)`. Subclass: `GroqProvider`, `CerebrasProvider`, `GeminiProvider`. Cons: 3 extra classes, verbose, overkill for 3 providers that mostly just call their SDK. The abstraction leaks anyway (Gemini needs message format conversion that the others don't).
+Option B — `_Provider` dataclass bundling `name`, `client`, `model`, `circuit_breaker`. The dispatch logic (`_call_groq`, `_call_cerebras`, `_call_gemini`) lives in `LLMService` as private methods. `generate()` iterates `self._providers` and dispatches via `_call_provider(provider, ...)` which has a small if/elif.
+
+**What I chose:** Option B — dataclass
+
+**Why:**
+Three providers is not enough to justify a class hierarchy. The dataclass captures the data (name, client, model, circuit breaker) and the `LLMService` methods capture the behavior. Behavior is per-provider type, not per-provider instance — so it belongs in dispatch methods, not in subclasses. If a fourth provider appeared that needed fundamentally different behavior (e.g. a local model with no SDK), that's when an ABC makes sense.
+
+**What I'm giving up:**
+Open/closed principle — adding a provider means touching `_setup_providers`, adding a `_call_<name>` method, and adding a case to `_call_provider`. With ABC, you'd only add a new subclass. Acceptable tradeoff for 3 providers.
+
+**How I'll know if I was wrong:**
+If provider count grows past 5-6 and `_call_provider` becomes a long if/elif chain. At that point, extract a protocol/ABC.
+
+**Interview answer version:**
+"I used a dataclass over an ABC because three providers don't justify a class hierarchy — the dispatch logic is simple enough to live in private methods. If the provider list grew significantly I'd extract a protocol."
+
+---
+
+### D-14 | 2026-04-27 | Injectable clock for CircuitBreaker tests
+
+**The question I was facing:**
+`CircuitBreaker` checks `time.time()` to decide if 60 seconds have passed and it's time to go HALF_OPEN. How do I test the 60-second timeout without actually sleeping 60 seconds in tests?
+
+**Options I considered:**
+Option A — `monkeypatch.setattr(time, 'time', ...)`: pytest's monkeypatch globally replaces `time.time` for the duration of the test. Works, but the patch affects every piece of code running in that test — risky if something else also calls `time.time()`. Also less explicit about intent.
+Option B — Injectable clock: `def __init__(self, ..., _clock=time.time)`. Default is real time. Tests pass `_clock=lambda: fake_time[0]` and control the fake time by mutating `fake_time[0]`. No global state, no side effects on other code.
+
+**What I chose:** Option B — injectable clock
+
+**Why:**
+The injectable pattern is explicit about which object is time-dependent. It requires no test framework magic — it's just a function argument. It generalizes to any time-sensitive class: use `_clock=time.time` as the default and inject in tests. This is the dependency injection pattern applied to time.
+
+**What I'm giving up:**
+The `_clock` parameter is slightly unexpected to a reader who hasn't seen this pattern. Convention is to name it `_clock` (underscore prefix) to signal "internal/testing use only, don't pass this in production."
+
+**How I'll know if I was wrong:**
+If I find myself needing to patch `time.time` globally anyway for some reason. Hasn't happened.
+
+**Interview answer version:**
+"The circuit breaker needed time.time() to check the 60-second recovery timeout. Rather than monkeypatching the global, I injected the clock function as a constructor parameter with a default of time.time. Tests pass a lambda over a mutable list to control the clock. This is dependency injection applied to time."
+
+---
+
+### D-15 | 2026-04-27 | try/except ImportError for optional providers
+
+**The question I was facing:**
+Cerebras and Gemini SDKs aren't installed in the project venv. How do I write code that uses them when they're present without crashing when they're absent?
+
+**Options I considered:**
+Option A — Require all packages: add cerebras-cloud-sdk and google-generativeai to requirements.txt. Everyone must install them. Cons: adds hundreds of MB of dependencies for packages that may never be used. Also requires API keys for packages you can't use without accounts.
+Option B — Conditional import at usage site: check `os.getenv("CEREBRAS_API_KEY")` and only then `from cerebras.cloud.sdk import ...`. Cons: the import inside an `if` block confuses type checkers and is hard to reason about.
+Option C — `try/except ImportError` at module level: attempt the import at module load time, set `_CEREBRAS_AVAILABLE = True/False`. Usage code checks the flag. Type: `AsyncCerebras = None` as fallback satisfies references without crashing.
+
+**What I chose:** Option C — try/except at module level
+
+**Why:**
+Module-level imports are visible, predictable, and happen once. The `_CEREBRAS_AVAILABLE` flag is a clear signal. `_setup_providers()` reads both the flag and the API key — both must be present to add the provider. Type checkers are satisfied with `# type: ignore[assignment]` on the `None` fallback.
+
+**What I'm giving up:**
+The `type: ignore` comments are slightly ugly. A full solution would use `TYPE_CHECKING` guards and conditional type stubs.
+
+**How I'll know if I was wrong:**
+If the optional packages start failing silently in production in a way that's hard to debug. Mitigation: the structlog warning when a provider isn't available would make this visible.
+
+**Interview answer version:**
+"For optional provider SDKs, I use try/except ImportError at module level and set an availability flag. The service constructor checks both the flag and the API key before adding a provider. This follows the pattern used in popular libraries like SQLAlchemy for optional drivers."
+
+---
+
+### D-16 | 2026-04-27 | async generator for stream()
+
+**The question I was facing:**
+`stream()` needs to yield tokens as they arrive from the LLM API. What's the right return type and structure?
+
+**Options I considered:**
+Option A — Collect all tokens, return a list: `chunks = []; async for c in api_stream: chunks.append(c); return chunks`. Simple. Cons: destroys streaming — the caller doesn't see the first token until the last token arrives. For a voice app where responsiveness matters, this is wrong.
+Option B — Return a callback: `stream(messages, on_token: Callable[[str], None])`. Caller passes a function that gets called for each token. Works but awkward — you can't use it in `async for`, can't chain it, hard to test.
+Option C — `async def` + `yield` = async generator. The function returns an `AsyncGenerator[str, None]` (satisfies `AsyncIterator[str]`). Caller does `async for chunk in service.stream(messages)`. Natural, composable, testable. Falls back to `generate()` if streaming fails — yields the full response as one chunk.
+
+**What I chose:** Option C — async generator
+
+**Why:**
+Async generators are the standard Python pattern for asynchronous sequences. They compose naturally with `async for`, work with FastAPI's streaming responses, and can be collected into a list in tests with `chunks = [c async for c in service.stream(...)]`. The fallback path (`yield response.content`) is a single yield — the caller doesn't know or care whether it came from streaming or not.
+
+**What I'm giving up:**
+Slightly harder to type-annotate correctly. The return annotation is `AsyncIterator[str]` but the runtime type is `AsyncGenerator[str, None]`. Both are correct (AsyncGenerator is a subtype of AsyncIterator).
+
+**Interview answer version:**
+"LLM streaming returns tokens one at a time. I used an async generator — async def with yield — so callers can consume tokens as they arrive with async for. This is the natural Python pattern for async sequences and composes directly with FastAPI's StreamingResponse."
+
+---
+
 ### D-9 | 2026-04-26 | asyncio.to_thread for faster-whisper inference
 
 **The question I was facing:**

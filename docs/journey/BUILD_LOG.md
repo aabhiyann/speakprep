@@ -2,6 +2,41 @@
 
 ---
 
+## 2026-04-27 — Day 3 — Phase 1 Task 1.3: LLMService
+
+### What I Built Today
+Created `backend/app/services/llm_service.py` — the `LLMService` class handling all LLM communication with a multi-provider fallback chain (Groq → Cerebras → Gemini) and a `CircuitBreaker` per provider. Built 19 function-level commits: CircuitBreaker state machine (3 commits), Pydantic models, `_Provider` dataclass, `__init__`/`_setup_providers`, three provider call methods, `_to_gemini_messages` format converter, `generate()` fallback loop, `_stream_provider` async generator, and `stream()`. 13 unit tests mocking all provider SDK clients. Total tests now 43/43 passing. PR #12 merged to develop.
+
+Also debated and resolved the squash merge vs granular commit strategy: going forward, use "Create a merge commit" for feature → develop (preserves all function-level commits) and squash only for develop → main.
+
+### What I Learned
+- **Circuit breaker pattern**: Software equivalent of an electrical circuit breaker. When a provider keeps failing (3 consecutive times), you "open" the circuit — all subsequent requests fail immediately without even trying the API. After 60 seconds, transition to HALF_OPEN: allow exactly one test request. If it succeeds, close the circuit. If it fails, open again. This prevents cascading failures where a slow/dead provider wastes time on every request instead of immediately skipping to the fallback.
+- **Async generators**: A function with both `async def` AND `yield` is an async generator. It produces values one at a time, on demand, and callers use `async for chunk in ...` to consume them. This is the natural way to implement LLM token streaming — each token arrives one at a time from the API, you yield it immediately, the caller can display it or forward it over a WebSocket without waiting for the full response.
+- **Injectable dependencies for testability**: The `CircuitBreaker` takes `_clock=time.time` in its constructor. In production, `_clock()` returns real wall-clock time. In tests, `_clock=lambda: fake_time[0]` — you control what "time" the circuit breaker sees. No monkeypatching globals. This generalizes: any time-dependent, random, or I/O-dependent value can be injected this way.
+- **Optional imports with try/except ImportError**: Wrapping `from cerebras.cloud.sdk import AsyncCerebras` in a try/except means the module loads fine even if the package isn't installed. The `_CEREBRAS_AVAILABLE` flag tracks whether it's available. `_setup_providers()` checks both the flag and the API key before adding the provider. This is how production code handles optional dependencies that not everyone will install.
+- **AsyncMock vs MagicMock**: `MagicMock` fakes synchronous functions. `AsyncMock` fakes `async def` functions — it returns a coroutine that, when awaited, returns the configured value. If you use `MagicMock` for an async function and `await` it, you get `TypeError: object MagicMock is not awaitable`. Always use `AsyncMock` for anything your code does `await func(...)` on.
+- **structlog structured logging**: Instead of `logger.info("called Groq, took 234ms, used 50 tokens")` (a string), structlog logs `logger.info("llm.call.success", provider="groq", latency_ms=234, tokens_used=50)` — key-value pairs. This is searchable and filterable in any log aggregation system (Grafana, Datadog, CloudWatch). "give me all logs where latency_ms > 500" is trivial with structured logs, impossible with string logs.
+
+### What Confused Me
+- **Squash merge deleting function-level commits**: After merging PR #12, `git log develop` showed one commit instead of 19. The granular commits still exist in GitHub's PR history but they're gone from the branch log. This defeats the purpose of function-level commits for the learning journal. Resolution: use "Create a merge commit" (not squash) for feature → develop merges going forward.
+- **ruff removing `pytest` import**: On the first commit of the test file, ruff removed `import pytest` because no test function had used it yet. The second commit added `@pytest.mark.asyncio` which requires pytest — the tests couldn't collect. Fixed by re-adding `import pytest` explicitly.
+
+### Decisions Made
+- `_Provider` dataclass not ABC (see D-13)
+- Injectable clock for CircuitBreaker (see D-14)
+- try/except ImportError for optional providers (see D-15)
+- async generator for `stream()` (see D-16)
+
+### How It Feels
+43 green tests is a real milestone. The circuit breaker clicked — it's one of those patterns that feels obvious after you understand it but mysterious before. The async generator for streaming is elegant: the LLM sends tokens one at a time, you yield them one at a time, and the caller can do whatever they want with each chunk.
+
+### Tomorrow's Plan
+1. Read Task 1.4 spec (WebSocket voice handler)
+2. Build `backend/app/api/ws.py` — the real voice pipeline WebSocket
+3. Wire VADRecorder → LocalASR → LLMService → stream back over WebSocket
+
+---
+
 ## 2026-04-26 — Day 2 cont. — Phase 1 Task 1.2: LocalASR
 
 ### What I Built Today
