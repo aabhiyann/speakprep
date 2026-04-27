@@ -202,3 +202,76 @@ async def test_generate_falls_back_to_cerebras_on_groq_rate_limit() -> None:
     # Groq circuit breaker should have recorded a failure
     groq_provider = svc._providers[0]
     assert groq_provider.circuit_breaker._failures == 1
+
+
+# ---------------------------------------------------------------------------
+# LLMService.generate — all providers fail raises RuntimeError
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_generate_raises_when_all_providers_fail() -> None:
+    groq_mock = MagicMock()
+    groq_mock.chat.completions.create = AsyncMock(side_effect=Exception("Groq down"))
+
+    cerebras_mock = MagicMock()
+    cerebras_mock.chat.completions.create = AsyncMock(
+        side_effect=Exception("Cerebras down")
+    )
+
+    svc = _make_service_two_providers(groq_mock, cerebras_mock)
+
+    with pytest.raises(RuntimeError, match="All LLM providers failed"):
+        await svc.generate(MESSAGES)
+
+
+# ---------------------------------------------------------------------------
+# Circuit breaker integration — opens after 3 consecutive failures via generate
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_circuit_breaker_opens_after_three_generate_failures() -> None:
+    groq_mock = MagicMock()
+    groq_mock.chat.completions.create = AsyncMock(side_effect=Exception("transient"))
+    svc = _make_service(groq_mock)
+    groq_provider = svc._providers[0]
+
+    for _ in range(3):
+        with pytest.raises(RuntimeError):
+            await svc.generate(MESSAGES)
+
+    assert groq_provider.circuit_breaker.state == _CBState.OPEN
+    assert groq_provider.circuit_breaker.is_available() is False
+
+
+# ---------------------------------------------------------------------------
+# Circuit breaker — half-open allows exactly one request
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_circuit_breaker_half_open_allows_one_request_through_generate() -> None:
+    fake_time = [0.0]
+    groq_mock = MagicMock()
+    groq_mock.chat.completions.create = AsyncMock(side_effect=Exception("down"))
+    svc = _make_service(groq_mock)
+
+    # Replace the circuit breaker with one that has a controllable clock
+    cb = CircuitBreaker(
+        failure_threshold=1, recovery_timeout=60.0, _clock=lambda: fake_time[0]
+    )
+    svc._providers[0].circuit_breaker = cb
+
+    # Open it
+    cb.record_failure()
+    assert cb.state == _CBState.OPEN
+
+    # Time passes — now half-open
+    fake_time[0] = 61.0
+    assert cb.is_available() is True  # first — allowed through
+    assert cb.is_available() is False  # second — blocked (in-flight already)
+
+    # The one allowed request fails → back to OPEN
+    cb.record_failure()
+    assert cb.state == _CBState.OPEN
