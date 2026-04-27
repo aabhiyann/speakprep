@@ -237,3 +237,57 @@ class LLMService:
             response.usage_metadata.total_token_count if response.usage_metadata else 0
         )
         return content, tokens
+
+    async def _call_provider(
+        self,
+        provider: _Provider,
+        messages: list[Message],
+        max_tokens: int,
+        temperature: float,
+    ) -> tuple[str, int]:
+        if provider.name == "groq":
+            return await self._call_groq(provider, messages, max_tokens, temperature)
+        if provider.name == "cerebras":
+            return await self._call_cerebras(
+                provider, messages, max_tokens, temperature
+            )
+        if provider.name == "gemini":
+            return await self._call_gemini(provider, messages, max_tokens, temperature)
+        raise ValueError(f"Unknown provider: {provider.name}")
+
+    async def generate(
+        self,
+        messages: list[Message],
+        max_tokens: int = 200,
+        temperature: float = 0.7,
+    ) -> LLMResponse:
+        for provider in self._providers:
+            if not provider.circuit_breaker.is_available():
+                continue
+            started = time.perf_counter()
+            try:
+                content, tokens = await self._call_provider(
+                    provider, messages, max_tokens, temperature
+                )
+                latency_ms = int((time.perf_counter() - started) * 1000)
+                provider.circuit_breaker.record_success()
+                logger.info(
+                    "llm.call.success",
+                    provider=provider.name,
+                    model=provider.model,
+                    latency_ms=latency_ms,
+                    tokens_used=tokens,
+                )
+                return LLMResponse(
+                    content=content,
+                    provider=provider.name,
+                    model=provider.model,
+                    latency_ms=latency_ms,
+                    tokens_used=tokens,
+                )
+            except Exception as exc:
+                provider.circuit_breaker.record_failure()
+                logger.warning(
+                    "llm.provider.failure", provider=provider.name, error=str(exc)
+                )
+        raise RuntimeError("All LLM providers failed or circuit breakers are open")
