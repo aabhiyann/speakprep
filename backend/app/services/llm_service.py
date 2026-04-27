@@ -4,6 +4,22 @@ from __future__ import annotations
 
 import time
 from enum import Enum
+from typing import Literal
+
+from pydantic import BaseModel
+
+
+class Message(BaseModel):
+    role: Literal["system", "user", "assistant"]
+    content: str
+
+
+class LLMResponse(BaseModel):
+    content: str
+    provider: str
+    model: str
+    latency_ms: int
+    tokens_used: int
 
 
 class _CBState(str, Enum):
