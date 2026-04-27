@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import os
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
+import pytest
 
 from app.services.llm_service import (
     CircuitBreaker,
+    LLMResponse,
     LLMService,
     Message,
     _CBState,
@@ -119,3 +121,41 @@ def test_circuit_breaker_reopens_on_failure_in_half_open() -> None:
     cb.record_failure()
     assert cb.state == _CBState.OPEN
     assert cb.is_available() is False
+
+
+# ---------------------------------------------------------------------------
+# LLMService.generate — Groq success path
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_generate_groq_success_returns_llm_response() -> None:
+    groq_mock = MagicMock()
+    groq_mock.chat.completions.create = AsyncMock(
+        return_value=_groq_response("Start with your background.")
+    )
+    svc = _make_service(groq_mock)
+
+    result = await svc.generate(MESSAGES)
+
+    assert isinstance(result, LLMResponse)
+    assert result.content == "Start with your background."
+    assert result.provider == "groq"
+    assert result.model == "llama-3.3-70b-versatile"
+    assert result.tokens_used == 42
+    assert result.latency_ms >= 0
+
+
+@pytest.mark.asyncio
+async def test_generate_groq_calls_api_with_correct_messages() -> None:
+    groq_mock = MagicMock()
+    groq_mock.chat.completions.create = AsyncMock(return_value=_groq_response())
+    svc = _make_service(groq_mock)
+
+    await svc.generate(MESSAGES)
+
+    call_kwargs = groq_mock.chat.completions.create.call_args.kwargs
+    assert call_kwargs["model"] == "llama-3.3-70b-versatile"
+    assert call_kwargs["messages"] == [m.model_dump() for m in MESSAGES]
+    assert call_kwargs["max_tokens"] == 200
+    assert call_kwargs["temperature"] == pytest.approx(0.7)
