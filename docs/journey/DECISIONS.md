@@ -4,6 +4,97 @@ Format: ### D-N | Date | Title
 
 ---
 
+### D-9 | 2026-04-26 | asyncio.to_thread for faster-whisper inference
+
+**The question I was facing:**
+`LocalASR.transcribe()` is an async method, but faster-whisper inference is CPU-bound and synchronous. How do I call it from async code without freezing the server?
+
+**Options I considered:**
+Option A — Call it directly: `segments, info = self._model.transcribe(audio_f32)`. Simplest. Cons: faster-whisper inference takes 2-5 seconds on CPU. During that time the entire event loop is blocked — no pings, no other WebSocket messages, no health checks can run. One transcription request freezes every connected client.
+Option B — `asyncio.to_thread(self._transcribe_sync, audio)`: runs the sync function in Python's default thread pool executor. Event loop awaits the result but is free to run other coroutines while the thread works. CTranslate2 (the C library underlying faster-whisper) releases the GIL during matrix operations, so actual CPU work runs in parallel with the event loop.
+
+**What I chose:** Option B — asyncio.to_thread
+
+**Why:**
+SpeakPrep is a multi-client voice server. If one user's transcription freezes everyone else, the product is unusable. `asyncio.to_thread` is exactly the right tool for CPU-bound work you can't rewrite as async — it moves the blocking work to a thread pool without requiring any changes to the sync logic.
+
+**What I'm giving up:**
+Slightly more complex call structure. The sync business logic lives in `_transcribe_sync`, the async wrapper in `transcribe`. This split is intentional and actually improves testability — you can unit-test `_transcribe_sync` directly in a sync context.
+
+**How I'll know if I was wrong:**
+If profiling shows the thread pool is saturating (all workers busy) during peak load. At that point, switch to a GPU or move transcription to a separate process with `ProcessPoolExecutor`.
+
+**Interview answer version:**
+"faster-whisper is CPU-bound so I wrapped it with asyncio.to_thread — this runs inference in a thread pool and keeps the event loop free. CTranslate2 releases the GIL during computation, so it runs genuinely in parallel with the event loop thread rather than just context-switching."
+
+---
+
+### D-10 | 2026-04-26 | Materialise faster-whisper generator with list() before filtering
+
+**The question I was facing:**
+`model.transcribe()` returns `(segments_generator, info)`. Should I iterate the generator directly or convert it to a list first?
+
+**Options I considered:**
+Option A — Iterate directly: `max(s.no_speech_prob for s in segments_iter)`. Fewer allocations. Cons: a generator is a one-time iterable — after the first `max()` exhausts it, the second `max(s.compression_ratio ...)` sees nothing and raises `ValueError: max() arg is an empty sequence`.
+Option B — Materialise with `list()`: `segments = list(segments_iter)`. Iterate twice safely. Minor memory overhead.
+
+**What I chose:** Option B — materialise with list()
+
+**Why:**
+Correctness over micro-optimisation. We need to apply two independent filters (`no_speech_prob` and `compression_ratio`) and then join segment texts — that's three passes over the data. Short utterances from VADRecorder are typically 2-10 seconds and produce at most 3-5 segments. The list is tiny.
+
+**What I'm giving up:**
+Nothing meaningful. Materialising 5 small objects is not a performance concern.
+
+**Interview answer version:**
+"faster-whisper returns a lazy generator that can only be iterated once. I materialise it with list() immediately because I need to apply two independent filters and then join the text — that requires multiple passes over the segments."
+
+---
+
+### D-11 | 2026-04-26 | Use max() across all segments for hallucination filtering
+
+**The question I was facing:**
+When checking `no_speech_prob` and `compression_ratio`, should I filter per-segment (drop individual bad segments) or use the worst-case value to filter the entire utterance?
+
+**Options I considered:**
+Option A — Per-segment filtering: drop segments where `no_speech_prob > 0.6`, keep the rest. Could salvage partial utterances. Cons: produces incomplete text mid-utterance (e.g., drops the middle of a sentence), which creates worse output than returning nothing.
+Option B — Worst-case across all segments: if ANY segment has `no_speech_prob > 0.6`, return `None` for the whole utterance. More conservative. Guarantees either clean complete output or nothing.
+
+**What I chose:** Option B — max() across all segments
+
+**Why:**
+For interview coaching, a partial or garbled transcript is worse than no transcript. If the LLM receives "Tell me about... [garbled middle]... that's why I think" it produces a nonsensical response. Returning `None` triggers a "sorry, could you repeat that?" response instead, which is a better user experience.
+
+**What I'm giving up:**
+Occasionally filtering genuinely valid short utterances that happen to contain a noisy segment. In Phase 2, Deepgram (the primary ASR) handles this better with streaming — this filter only applies to the offline fallback.
+
+**Interview answer version:**
+"I use max() across all segments rather than per-segment filtering because a partial transcript mid-utterance produces worse LLM responses than returning nothing. The offline Whisper fallback should fail clean — the primary Deepgram path handles noisy audio better."
+
+---
+
+### D-12 | 2026-04-26 | WhisperModel initialised once in __init__, not per transcription
+
+**The question I was facing:**
+Should `WhisperModel` be created once when `LocalASR` is instantiated, or on each call to `transcribe()`?
+
+**Options I considered:**
+Option A — Per-call initialisation: `model = WhisperModel("small", ...)` inside `transcribe()`. Avoids holding a large object in memory between calls. Cons: loading WhisperModel takes 10-30 seconds and requires downloading/reading ~500MB of model weights. Per-call initialisation means the first transcription of every request takes 30 seconds.
+Option B — Once in `__init__`: model loaded when the service starts, reused for every transcription. Loading happens once at server startup, each call costs only inference time (~4s on CPU).
+
+**What I chose:** Option B — once in __init__
+
+**Why:**
+A 30-second transcription latency is not a product — it's a broken product. Model loading is a one-time startup cost. The memory (~500MB for small INT8) is acceptable on the target hardware (Oracle Cloud ARM with 6GB RAM). This is standard practice for all ML inference services: load model at startup, keep it warm.
+
+**What I'm giving up:**
+Memory: the model occupies RAM even during idle periods. On low-memory machines, this matters. Mitigation: use `tiny` model (150MB) for very constrained environments.
+
+**Interview answer version:**
+"WhisperModel is loaded once at startup, not per-request — loading takes 10-30 seconds. This is standard ML inference practice: pay the startup cost once, then each inference is just computation. The model stays in memory warm for all requests."
+
+---
+
 ### D-1 | 2026-04-25 | pip + venv instead of Poetry
 
 **The question I was facing:**
