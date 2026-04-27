@@ -193,3 +193,47 @@ class LLMService:
         content = response.choices[0].message.content or ""
         tokens = response.usage.total_tokens if response.usage else 0
         return content, tokens
+
+    def _to_gemini_messages(
+        self, messages: list[Message]
+    ) -> tuple[list[dict], str | None]:
+        """Convert OpenAI-style messages to Gemini format.
+
+        Gemini separates system instructions from the conversation turns,
+        and uses role="model" instead of role="assistant".
+        """
+        system_parts: list[str] = []
+        contents: list[dict] = []
+        for msg in messages:
+            if msg.role == "system":
+                system_parts.append(msg.content)
+            else:
+                role = "model" if msg.role == "assistant" else "user"
+                contents.append({"role": role, "parts": [{"text": msg.content}]})
+        system = " ".join(system_parts) if system_parts else None
+        return contents, system
+
+    async def _call_gemini(
+        self,
+        provider: _Provider,
+        messages: list[Message],
+        max_tokens: int,
+        temperature: float,
+    ) -> tuple[str, int]:
+        contents, system_instruction = self._to_gemini_messages(messages)
+        config = genai.GenerationConfig(
+            max_output_tokens=max_tokens, temperature=temperature
+        )
+        model = (
+            genai.GenerativeModel(provider.model, system_instruction=system_instruction)
+            if system_instruction
+            else provider.client
+        )
+        response = await model.generate_content_async(
+            contents, generation_config=config
+        )
+        content = response.text or ""
+        tokens = (
+            response.usage_metadata.total_token_count if response.usage_metadata else 0
+        )
+        return content, tokens
