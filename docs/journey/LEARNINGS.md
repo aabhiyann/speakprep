@@ -4,6 +4,73 @@ Format: ### Concept — Date / Explanation
 
 ---
 
+### VAD state machine — triggered flag + silence counter — 2026-04-26
+
+**The confusion before:**
+I thought VAD was a function you call and it tells you "there was speech from 1.2s to 3.4s." I didn't understand how you detect speech in real time, frame by frame, without knowing the future.
+
+**The mental model that works:**
+You maintain two pieces of state: a `triggered` flag and a `silence_count` counter. Initially untriggered. Each 20ms frame you ask the VAD classifier one question: speech or silence?
+
+- Not triggered + speech → flip to triggered, start recording
+- Triggered + speech → keep recording, reset silence counter
+- Triggered + silence → increment silence counter; if counter ≥ threshold → utterance over, stop
+
+That's it. No lookahead. You never know if the next frame will be speech or silence — you just react to what arrives. The silence threshold (400ms = 20 consecutive silence frames) is the only tunable parameter that affects responsiveness vs. clipping risk.
+
+**Why it matters for SpeakPrep specifically:**
+This exact state machine is in `VADRecorder.record_until_silence()` and `collect_from_file()`. When Phase 2 adds streaming Deepgram, the same pattern applies — we'll watch Deepgram's `is_final` field instead of a silence counter, but the triggered/not-triggered logic is identical.
+
+**The code that made it real:**
+```python
+if not triggered:
+    if is_speech:
+        triggered = True          # speech has started
+else:
+    silence_count += 1 if not is_speech else 0
+    if not is_speech and silence_count >= self._silence_frames_needed:
+        break                     # utterance over
+```
+
+**What to read if you want to go deeper:**
+[WebRTC VAD README — webrtcvad Python bindings](https://github.com/wiseman/py-webrtcvad)
+
+**Interview answer version:**
+"VAD for real-time speech detection is a two-state machine: wait for speech to start, then wait for sustained silence to end the utterance. The silence threshold — typically 400ms — is the tradeoff between cutting off trailing words and adding latency to every turn."
+
+---
+
+### asyncio.to_thread — running blocking code without freezing the server — 2026-04-26
+
+**The confusion before:**
+I knew that `time.sleep()` inside async code was bad. But I didn't know what to do when I have a legitimate CPU-intensive operation (like ML inference) that genuinely takes 2-3 seconds and can't be made async.
+
+**The mental model that works:**
+`asyncio.to_thread(fn, *args)` runs `fn` in Python's default thread pool executor and suspends your coroutine until it finishes. From the event loop's perspective: your coroutine yields control (just like any `await`), other tasks run, and when the thread is done the coroutine resumes with the result.
+
+The thread pool has real OS threads, so CPU-bound work actually runs in parallel with the event loop. The GIL is released during the thread's computation — Python releases the GIL during C extension calls, and faster-whisper is a C extension.
+
+Without `to_thread`: faster-whisper holds the GIL for 2-3 seconds. Every other coroutine is frozen. One transcription request freezes the entire server — no other client can receive a ping, send audio, or do anything.
+
+With `to_thread`: inference runs in a thread, event loop keeps serving other requests, result arrives when ready.
+
+**Why it matters for SpeakPrep specifically:**
+`LocalASR.transcribe()` will use `await asyncio.to_thread(self._transcribe_sync, audio)`. This is Task 1.2. Without it, a 2-second Whisper inference would freeze every active WebSocket connection during that time — unacceptable for a real-time voice app.
+
+**The code that made it real:**
+```python
+# CPU-bound work runs in thread, event loop stays free
+result = await asyncio.to_thread(self._transcribe_sync, audio)
+```
+
+**What to read if you want to go deeper:**
+[Python docs — asyncio.to_thread](https://docs.python.org/3/library/asyncio-task.html#asyncio.to_thread)
+
+**Interview answer version:**
+"asyncio.to_thread offloads CPU-bound work to a thread pool and awaits the result, keeping the event loop free to serve other requests. For ML inference like Whisper, this is essential — without it, a single transcription request would block every active WebSocket connection for the duration of inference."
+
+---
+
 ### HTTP vs WebSockets — 2026-04-26
 
 **The confusion before:**

@@ -1,0 +1,755 @@
+# SpeakPrep — Document 6: Agent Documentation Prompts
+### Auto-generate your build log, learnings, decisions, blog posts, LinkedIn, and more
+### Version 1.0 | Abhiyan Sainju | April 2026
+
+---
+
+> These are prompts you give to an agent (Claude, Cursor, Claude Code) to write your
+> documentation FOR you. You provide the raw input (what you did, what confused you,
+> what you decided). The agent writes it up properly. Run each prompt at the right time.
+> The agent is your ghostwriter — you supply the experience, it supplies the words.
+
+---
+
+## HOW THIS WORKS
+
+You never write documentation from scratch. Instead:
+
+1. At the end of every dev session: run the **Daily Build Log Prompt**
+2. When something clicks or confuses you: run the **Learnings Prompt**
+3. When you make a technical choice: run the **Decision Prompt**
+4. At the end of each phase: run the **Phase Summary Prompt**
+5. When you want to post on LinkedIn: run the **LinkedIn Prompt**
+6. When you want to write a blog post: run the **Blog Post Prompt**
+7. When you want a deep technical write-up: run the **Technical Deep Dive Prompt**
+8. At the end of the whole project: run the **Full Journey Prompt**
+
+**Which agent to use for all of these:** Claude (this chat) or Claude Code.
+Not Cursor — Cursor is for code editing. These are writing tasks.
+
+**The input you give the agent:**
+Just talk naturally. Voice notes transcribed, bullet points, messy notes —
+anything. The agent's job is to turn your raw thoughts into clean documentation.
+You don't need to write well. You just need to remember what happened.
+
+---
+
+## FILE STRUCTURE
+
+```
+speakprep/
+├── docs/
+│   ├── journey/
+│   │   ├── BUILD_LOG.md          ← daily raw entries, one per session
+│   │   ├── DECISIONS.md          ← every technical/product decision
+│   │   ├── LEARNINGS.md          ← concepts explained in your own words
+│   │   ├── BUGS.md               ← bugs you hit and how you fixed them
+│   │   └── phase-summaries/
+│   │       ├── phase0-summary.md
+│   │       ├── phase1-summary.md
+│   │       └── ...
+│   ├── content/
+│   │   ├── linkedin-posts/       ← ready-to-post LinkedIn content
+│   │   ├── blog-posts/           ← full blog articles
+│   │   ├── technical-deepdives/  ← detailed technical write-ups
+│   │   └── tweet-threads/        ← Twitter/X thread drafts
+│   └── final/
+│       ├── full-journey.md       ← complete story from start to finish
+│       └── research-notes.md     ← for a potential paper or talk
+```
+
+Create this structure now:
+```bash
+mkdir -p docs/journey/phase-summaries
+mkdir -p docs/content/linkedin-posts
+mkdir -p docs/content/blog-posts
+mkdir -p docs/content/technical-deepdives
+mkdir -p docs/content/tweet-threads
+mkdir -p docs/final
+touch docs/journey/BUILD_LOG.md
+touch docs/journey/DECISIONS.md
+touch docs/journey/LEARNINGS.md
+touch docs/journey/BUGS.md
+```
+
+---
+
+## PROMPT 1: DAILY BUILD LOG
+
+**When to run:** At the end of every dev session. Even short ones.
+**Time it takes you:** 5 minutes of talking/typing your raw notes.
+**What the agent produces:** A clean, dated BUILD_LOG.md entry.
+
+**How to give input:** Just dump everything into the prompt below. Don't organize it.
+Write like you're texting a friend about what you did. Messy is fine.
+
+---
+
+### The Prompt:
+
+```
+You are helping me document my development journey building SpeakPrep,
+a real-time voice AI mock interview coach. I am learning while building —
+this documentation will later become blog posts, LinkedIn content, and
+a full journey write-up.
+
+Today's raw notes (my stream of consciousness — do NOT clean up my meaning,
+just clean up the writing):
+---
+[PASTE YOUR RAW NOTES HERE — everything you did, tried, broke, fixed,
+learned, felt confused about, felt proud of. Voice note transcript is fine.]
+---
+
+Write a BUILD_LOG.md entry for today with this structure:
+
+## [Date] — Day [N] — Phase [X]: [one-line summary of the session]
+
+### What I Built Today
+[2-4 sentences: what actually got done. Concrete. Specific file names, function names.]
+
+### What I Learned
+[Bullet list: each bullet is one concept or insight. Write it like explaining
+to a smart friend who isn't a developer. Simple language, real understanding.]
+
+### What Confused Me (and how I resolved it, or if still open)
+[Honest account of what was hard. Don't skip this — it's the most valuable
+part for future readers who will feel the same confusion.]
+
+### Decisions Made
+[Any choices between approaches. Why you picked one over another.
+Even small ones: "used X instead of Y because..."]
+
+### Bugs / Errors Hit
+[Any error messages, unexpected behavior, things that didn't work at first.
+What you tried. What finally fixed it.]
+
+### How It Feels
+[One honest sentence about energy, momentum, confidence. This is for the
+human story in the blog/LinkedIn content later.]
+
+### Tomorrow's Plan
+[1-3 specific tasks, not vague goals]
+
+After writing the entry, also:
+1. Extract any new DECISIONS and format them for DECISIONS.md
+   (format: ### D-[N] | [date] | [title] / Why / Tradeoff / What I'd do differently)
+2. Extract any new LEARNINGS and format them for LEARNINGS.md
+   (format: ### [concept] — [date] / [explanation in your own words, 3-8 sentences])
+3. Extract any BUGS worth documenting for BUGS.md
+   (format: ### BUG-[N] | [date] | [title] / Symptom / Root cause / Fix / Lesson)
+
+Output each section clearly labeled so I can copy into the right file.
+```
+
+---
+
+## PROMPT 2: LEARNINGS ENTRY (on-demand)
+
+**When to run:** The moment something clicks. When you finally understand
+why asyncio works the way it does, why 400ms is the right silence threshold,
+why JWT tokens expire in 15 minutes — whatever it is. Run this immediately
+while it's fresh. Don't wait until end of day.
+
+**How to give input:** Describe the concept and what made it click.
+Can be one sentence: "I just understood why you can't use time.sleep() in
+async code." That's enough.
+
+---
+
+### The Prompt:
+
+```
+I just had a learning moment while building SpeakPrep. Help me document it
+properly in LEARNINGS.md so I can reference it later and use it in blog posts.
+
+What I just understood:
+---
+[DESCRIBE WHAT CLICKED — can be messy, one sentence, or a paragraph.
+What was confusing before? What's clear now? What's the mental model?
+What would you tell past-you to understand it faster?]
+---
+
+Context (optional — fill in what's relevant):
+- Phase I'm in: [Phase X]
+- Task I was doing: [task name]
+- The specific thing that made it click: [code, explanation, experiment]
+
+Write a LEARNINGS.md entry in this format:
+
+### [Concept Name] — [Date]
+
+**The confusion before:**
+[What didn't make sense. What I thought it was. Why that was wrong.]
+
+**The mental model that works:**
+[The explanation in simple terms. Use an analogy if there is a good one.
+Write it like explaining to a smart non-developer friend.]
+
+**Why it matters for SpeakPrep specifically:**
+[How does this concept actually show up in what I'm building?
+What would break if I misunderstood it?]
+
+**The code that made it real:**
+[2-5 lines of the specific code that illustrated the concept.
+Not the whole function — just the key line(s).]
+
+**What to read if you want to go deeper:**
+[One specific resource — article title + URL, or book + chapter.]
+
+**Interview answer version:**
+[How would I explain this concept in a technical interview in 3 sentences?
+This is for when I'm asked "explain asyncio" or "how does VAD work."]
+```
+
+---
+
+## PROMPT 3: DECISION ENTRY (on-demand)
+
+**When to run:** Every time you choose between two technical approaches.
+Even small ones. "Should I use X or Y?" — log it when you decide.
+
+---
+
+### The Prompt:
+
+```
+I just made a technical decision while building SpeakPrep. Help me document
+it properly in DECISIONS.md for future reference and blog content.
+
+The decision:
+---
+[DESCRIBE THE CHOICE YOU MADE AND WHY — can be a few sentences.
+What were the options? What did you pick? What made you pick it?]
+---
+
+Write a DECISIONS.md entry in this format:
+
+### D-[N] | [Date] | [Short title of the decision]
+
+**The question I was facing:**
+[What problem needed a decision? What were the stakes?]
+
+**Options I considered:**
+Option A — [name]: [what it is, pros, cons]
+Option B — [name]: [what it is, pros, cons]
+(Option C if applicable)
+
+**What I chose:** Option [X]
+
+**Why:**
+[Real reasoning. Not just "it's better" — what specifically about my
+situation made this the right call? What would have to be different
+for me to pick the other option?]
+
+**What I'm giving up:**
+[Honest tradeoff. Every decision has a cost. What's mine?]
+
+**How I'll know if I was wrong:**
+[What signal would tell me this was the wrong choice?
+What would make me switch?]
+
+**Interview answer version:**
+[How would I explain this decision in a system design interview
+or "tell me about a technical decision you made" question? 2-3 sentences.]
+```
+
+---
+
+## PROMPT 4: BUG STORY (on-demand)
+
+**When to run:** After fixing a bug that took more than 15 minutes to solve,
+or any bug that taught you something important.
+
+---
+
+### The Prompt:
+
+```
+I just fixed a bug while building SpeakPrep. Help me document it properly
+in BUGS.md. This will become one of my "bug story" interview answers later.
+
+The bug:
+---
+[DESCRIBE EVERYTHING — what the symptom was, what you tried, what you
+thought it was at first, what it actually was, how you fixed it.
+Include any error messages you saw.]
+---
+
+Write a BUGS.md entry AND an interview-ready bug story:
+
+### BUG-[N] | [Date] | [Short title]
+
+**Phase:** [Phase X — Task Y]
+**Time to fix:** [rough estimate]
+
+**The symptom:**
+[What I observed. What the error message said. What behavior I expected
+vs what actually happened.]
+
+**My debugging process:**
+[Step by step what I tried. What led me in the wrong direction.
+What finally pointed me to the real cause. Be specific — this is the
+educational part.]
+
+**Root cause:**
+[The actual reason it was happening. One clear sentence.]
+
+**The fix:**
+[What I changed. Key code lines if relevant.]
+
+**Why it happened:**
+[The underlying concept I misunderstood or didn't know.
+What would have prevented this bug if I'd known it earlier?]
+
+**The lesson:**
+[One sentence: "Now I always [do X]" or "Never [do Y] because [Z]."]
+
+---
+Then write this as an interview STAR story:
+
+**Interview version (STAR format):**
+Situation: [context — what I was building, what phase]
+Task: [what I needed to make work]
+Action: [how I debugged and fixed it — specific steps]
+Result: [what got fixed, what I learned, what I'd tell a junior dev]
+```
+
+---
+
+## PROMPT 5: PHASE SUMMARY
+
+**When to run:** When you complete a phase (Phase 0, 1, 2, etc.).
+**Input:** Your BUILD_LOG.md entries from that phase + your own reflections.
+
+---
+
+### The Prompt:
+
+```
+I just completed [Phase X — Phase Name] of building SpeakPrep.
+Help me write a phase summary document.
+
+My BUILD_LOG entries from this phase:
+---
+[PASTE ALL BUILD_LOG.md ENTRIES FROM THIS PHASE]
+---
+
+My own reflections (messy notes):
+---
+[ANYTHING YOU WANT TO ADD — how it felt, what surprised you,
+what took longer than expected, what you're proud of]
+---
+
+Write a phase summary at docs/journey/phase-summaries/phase[X]-summary.md:
+
+# Phase [X] — [Phase Name]: Complete
+## [Start Date] → [End Date] | [Total days]
+
+### What This Phase Built
+[2-3 sentences: the concrete output. What exists now that didn't before?]
+
+### The Most Important Thing I Learned
+[One concept from this phase that changed how I think about building software.
+Not a list — pick the one that mattered most and explain it well.]
+
+### The Hardest Moment
+[The specific point where I was most stuck or confused.
+What it felt like. How I got through it.]
+
+### The Proudest Moment
+[The specific moment something worked that hadn't before.
+What it felt like when it clicked.]
+
+### By The Numbers
+- Days taken: [N]
+- Commits made: [run: git log --oneline | wc -l for this branch]
+- Files created: [N]
+- Lines of code written: [rough estimate]
+- Bugs hit and fixed: [N]
+- Times I wanted to quit: [honest number]
+
+### What I'd Do Differently
+[If I started this phase again tomorrow, knowing what I know now,
+what would I do in the first hour that I didn't do?]
+
+### What's Next
+[Phase X+1 preview: what I'm about to build, what I'm nervous about]
+
+---
+Then write a SHORT version (3 paragraphs) suitable for a LinkedIn update post:
+Paragraph 1: What I built this phase (concrete, specific)
+Paragraph 2: The one thing that surprised me
+Paragraph 3: What's next
+End with 3-5 relevant hashtags.
+```
+
+---
+
+## PROMPT 6: LINKEDIN POST (on-demand)
+
+**When to run:** Any time you want to post. Can be mid-phase.
+**Input:** A specific thing you built, learned, or realized. One thing per post.
+
+---
+
+### The Prompt:
+
+```
+Help me write a LinkedIn post about something I did while building SpeakPrep.
+
+What I want to post about:
+---
+[DESCRIBE THE SPECIFIC THING — could be a technical insight, a bug you fixed,
+a milestone you hit, something that surprised you, a decision you made.
+One thing. Be specific. Don't try to summarize everything.]
+---
+
+My tone and audience: I'm a recent MS CS grad from GW actively job hunting.
+My audience is software engineers, hiring managers, and recruiters.
+I want to come across as: genuinely learning, technically competent, honest
+about challenges, not performatively humble or braggy.
+
+Write 3 versions of the LinkedIn post:
+
+VERSION A — Technical insight (for engineers):
+Lead with the technical thing you learned. Explain it simply. Show the code
+or the concept. End with why it matters. 150-200 words. No fluff.
+
+VERSION B — Journey/story (for hiring managers):
+Lead with the human moment — the confusion, the breakthrough, the decision.
+Connect it to building something real. End with what you'd do differently.
+150-200 words. Personal but professional.
+
+VERSION C — Short punchy (for everyone):
+3-5 lines max. Hook → specific insight → implication. No bullet points.
+The kind of post that gets read in 10 seconds.
+
+Rules for all versions:
+- No "excited to share" or "humbled to announce"
+- No excessive exclamation marks
+- First sentence must make someone stop scrolling
+- Include the project name (SpeakPrep) naturally
+- End with a question or observation that invites comments
+- 3-5 hashtags at the end (not inline)
+```
+
+---
+
+## PROMPT 7: BLOG POST
+
+**When to run:** After completing a phase, or when you have a specific
+technical topic you want to write about deeply.
+**Best topics:** One concept per post. "How I built X" or "Why I chose X over Y"
+or "What I learned about X building a voice AI."
+
+---
+
+### The Prompt:
+
+```
+Help me write a technical blog post for my developer blog / portfolio.
+
+Topic: [ONE SPECIFIC TOPIC — e.g., "How streaming TTS works in a voice AI pipeline"
+or "Why I chose Groq over OpenAI for real-time voice" or "What I learned
+about Python asyncio building a WebSocket server"]
+
+My raw notes and experience on this topic:
+---
+[PASTE YOUR LEARNINGS.md ENTRY + BUILD_LOG entries + any notes on this topic]
+---
+
+Audience: Software engineers with 1-5 years experience. They know Python
+and web development but may not know voice AI, asyncio deeply, or the
+specific tools I used.
+
+Write a complete blog post with:
+
+# [Title — specific, searchable, not clickbait]
+
+## Introduction (150 words)
+Hook: the problem or question. Why does this matter?
+What will the reader know by the end?
+
+## [Section 1] — Background / The Problem (200-300 words)
+What was I trying to do? What didn't work at first?
+This is where the reader gets context.
+
+## [Section 2] — The Concept Explained (300-400 words)
+The core technical concept, explained simply.
+Include a diagram (described in text — I'll draw it) if it helps.
+Real code snippets from my actual project (short, annotated).
+
+## [Section 3] — How I Implemented It (300-400 words)
+The specific approach I took. Key code. What I tried first that didn't work.
+
+## [Section 4] — What Surprised Me / What I'd Do Differently (150-200 words)
+The honest take. What was harder than expected? What shortcut did I miss?
+
+## Conclusion (100 words)
+What to take away. One clear sentence that summarizes the lesson.
+Link to the repo.
+
+---
+Rules:
+- Code snippets must be real (from my actual project files)
+- Every technical claim must be explained, not assumed
+- Conversational but technically rigorous
+- No padding — if a sentence doesn't add value, cut it
+- Approximate total length: 1,200-1,800 words
+- Suggest 3 SEO-friendly titles and I'll pick one
+```
+
+---
+
+## PROMPT 8: TECHNICAL DEEP DIVE
+
+**When to run:** When you want a thorough technical document on one concept.
+Good for portfolio, for reference, or as the foundation of a talk or paper.
+
+---
+
+### The Prompt:
+
+```
+Help me write a technical deep dive document on a concept I learned
+while building SpeakPrep.
+
+Topic: [SPECIFIC CONCEPT — e.g., "Real-time audio streaming pipeline architecture"
+or "ELO-based adaptive difficulty in interview coaching systems"
+or "Multi-provider LLM fallback with circuit breakers"]
+
+My experience and notes:
+---
+[PASTE EVERYTHING RELEVANT — LEARNINGS.md entries, BUILD_LOG notes,
+the actual code you wrote, decisions you made, bugs you hit]
+---
+
+Write a technical deep dive at docs/content/technical-deepdives/[topic].md
+
+Structure:
+
+# [Topic]: A Deep Dive from Building SpeakPrep
+
+## Abstract (100 words)
+What this covers. Who should read it. What they'll be able to do after.
+
+## Problem Statement
+What problem does this concept solve?
+Why is the naive approach insufficient?
+
+## Core Concepts
+[Build up the theory from first principles.
+Define every term before using it.
+Use diagrams described in ASCII or text form.
+Link to academic papers or official docs where relevant.]
+
+## Implementation
+[The actual code I wrote. Annotated heavily.
+Show the evolution: what I tried first, why it didn't work,
+what the final version looks like and why.]
+
+## Performance Characteristics
+[Numbers where I have them. Latency, throughput, memory.
+What scales, what doesn't.]
+
+## Tradeoffs and Alternatives
+[What else I considered. Why I didn't use it.
+When would you use the alternative instead?]
+
+## Lessons Learned
+[What I'd tell someone starting this from scratch.
+What the docs don't tell you.
+What only experience teaches.]
+
+## References
+[Papers, blog posts, documentation that helped me understand this.
+With brief notes on what each one contributed.]
+
+Target length: 2,000-4,000 words depending on complexity.
+Write for a senior engineer audience — assume strong fundamentals.
+```
+
+---
+
+## PROMPT 9: TWEET / X THREAD
+
+**When to run:** When you have a specific technical insight that can be
+explained in a short thread. Good for building audience.
+
+---
+
+### The Prompt:
+
+```
+Help me write a Twitter/X thread about something I built or learned
+while building SpeakPrep.
+
+The insight:
+---
+[ONE SPECIFIC THING — a concept, a decision, a bug story, a surprising number.
+Something concrete and specific. Not "here's everything I learned."]
+---
+
+Write a Twitter thread:
+
+Tweet 1 (hook — max 280 chars):
+Stop people scrolling. State the most surprising or counterintuitive thing.
+Make them want to read the rest. Can be a question or a bold statement.
+
+Tweet 2-3 (setup — max 280 chars each):
+Build the context. What was I trying to do? What's the problem?
+
+Tweet 4-6 (the insight — max 280 chars each):
+The actual technical content. Be specific. Include code snippets where
+they fit (use code blocks). Numbers > vague claims.
+
+Tweet 7 (the lesson — max 280 chars):
+One sentence takeaway. What should the reader remember?
+
+Tweet 8 (CTA — max 280 chars):
+Point to the repo, ask a question, or invite engineers who've faced
+the same thing to share their approach.
+
+Rules:
+- Each tweet must stand alone (someone might screenshot one)
+- No "🧵 Thread:" — just start with the hook
+- Max 2 emojis per tweet, used sparingly
+- No "in this thread I will..." — show don't announce
+- Punchy. Short sentences. Real numbers.
+```
+
+---
+
+## PROMPT 10: FULL JOURNEY DOCUMENT
+
+**When to run:** Once. At the end of the project when it's launched.
+**Input:** ALL your BUILD_LOG.md entries + phase summaries + your reflections.
+**Output:** The complete story of building SpeakPrep, start to finish.
+This is the foundation for a long-form blog post, a talk, or a research paper.
+
+---
+
+### The Prompt:
+
+```
+I have finished building SpeakPrep — a real-time voice AI mock interview coach
+I built from scratch over [N months] while actively job hunting after graduating
+with my MS in CS from George Washington University.
+
+Here is all my documentation:
+
+BUILD_LOG.md (all entries):
+---
+[PASTE FULL BUILD_LOG.MD]
+---
+
+Phase summaries:
+---
+[PASTE ALL PHASE SUMMARY FILES]
+---
+
+DECISIONS.md:
+---
+[PASTE DECISIONS.MD]
+---
+
+LEARNINGS.md:
+---
+[PASTE LEARNINGS.MD]
+---
+
+My personal context:
+- I am Abhiyan Sainju, originally from Kathmandu, Nepal
+- MS Computer Science, GW, December 2025, GPA 3.97
+- Was actively job hunting while building this
+- This project was motivated by my own frustration with interview prep tools
+- I learned most of these technologies (asyncio, WebSockets, voice AI) while building
+
+Write docs/final/full-journey.md — the complete story:
+
+# Building SpeakPrep: A Developer's Journey
+## From frustration to a real-time voice AI in [N months]
+
+### Prologue: Why I Built This
+[The personal motivation. The job search frustration. The gap I saw.
+Write this as a story, not a product pitch. 300 words.]
+
+### The Decision to Build
+[What I decided to build and why. The key early decisions.
+What I almost built instead. 200 words.]
+
+### Phase by Phase: What Actually Happened
+[For each phase, 300-400 words:
+- What I planned to build
+- What actually happened (different from the plan?)
+- The hardest moment
+- The breakthrough moment
+- What I learned that I didn't expect to learn]
+
+### The Technical Decisions That Mattered Most
+[The 5 most important decisions from DECISIONS.md.
+For each: what the choice was, why it mattered, would I make the same choice again?]
+
+### What I Got Wrong
+[Honest retrospective. 3-5 things that took longer or went differently
+than expected. What I'd do differently. 300 words.]
+
+### What Surprised Me Most
+[The 3 most surprising things — technical, personal, or product. 200 words.]
+
+### What I Know Now That I Didn't Know Then
+[The most important things I learned — from LEARNINGS.md.
+Not a list of technologies. The actual mental models and insights. 400 words.]
+
+### The Numbers
+[Concrete stats: days building, commits, bugs fixed, latency achieved,
+users in beta, etc. Whatever you have.]
+
+### What's Next
+[For SpeakPrep, for my career, for what I want to build next. 200 words.]
+
+### Epilogue
+[One paragraph. What this project means to you.
+What you'd tell someone starting this today. Personal, honest, short.]
+
+---
+Target length: 4,000-6,000 words.
+Tone: Personal and honest. Not a press release. Not a tutorial.
+The reader should feel like they were there watching it happen.
+Write it in first person throughout.
+After the full document, also produce:
+1. A 500-word blog post version (the highlights only)
+2. A 200-word LinkedIn post version
+3. A 100-word bio blurb for talks/conferences: "Abhiyan built X while..."
+```
+
+---
+
+## DAILY HABIT: WHICH PROMPT, WHEN
+
+```
+Every dev session end (5 min):     → Prompt 1: Daily Build Log
+Concept clicks mid-session (3 min): → Prompt 2: Learnings Entry
+Make a technical choice (2 min):    → Prompt 3: Decision Entry
+Fix a hard bug (5 min):            → Prompt 4: Bug Story
+Finish a phase (20 min):           → Prompt 5: Phase Summary
+Want to post on LinkedIn (10 min): → Prompt 6: LinkedIn Post
+Want to write an article (30 min): → Prompt 7: Blog Post
+Want deep technical doc (45 min):  → Prompt 8: Technical Deep Dive
+Want a Twitter thread (10 min):    → Prompt 9: Tweet Thread
+Project finished (2-3 hours):      → Prompt 10: Full Journey
+```
+
+## ONE RULE
+
+**Never give the agent a vague input.** "I learned some stuff about async today"
+produces bad output. "I spent 2 hours confused about why time.sleep() inside
+an async function froze my entire server, then realized it blocks the single
+event loop thread — I tested it by adding a print statement before and after
+and confirming nothing else ran during the sleep" produces great output.
+
+Specific input → specific output. The agent can only work with what you give it.
+
+---
+
+*End of Document 6 — Agent Documentation Prompts*

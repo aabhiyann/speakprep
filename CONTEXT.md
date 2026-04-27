@@ -7,7 +7,7 @@
 ## Started: April 2026
 ## Contributors: Abhiyan Sainju only — no AI tools appear as git contributors
 ## Current Phase: 1 — Local Voice Pipeline
-## Current Task: VAD-triggered audio recording (Task 1.1)
+## Current Task: LocalASR service with faster-whisper (Task 1.2)
 
 ## Architecture Summary
 - Backend: Python 3.12, FastAPI, asyncio, WebSockets
@@ -48,9 +48,12 @@
 - [x] backend/app/audio/understanding.py — PCM/float32 conversion, frame splitting, audio stats
 - [x] backend/tests/unit/test_audio_understanding.py — 7 passing unit tests
 - [x] Phase 0 complete — tagged v0.1.0-phase0
+- [x] backend/app/audio/vad_recorder.py — VADRecorder with WebRTC VAD, silence detection, file testing
+- [x] backend/tests/unit/test_vad_recorder.py — 8 passing unit tests (synthetic WAV fixtures)
+- [x] docs/journey/ — BUILD_LOG, DECISIONS, LEARNINGS, BUGS pre-filled for Phase 0
 
 ## What's In Progress
-- VADRecorder (backend/app/audio/vad_recorder.py) — not started
+- LocalASR service (backend/app/services/asr_local.py) — not started
 
 ## What's Blocked
 - Nothing
@@ -60,13 +63,14 @@
 - Echo server: backend/app/api/ws_echo.py ✅
 - Async utils: backend/app/utils/async_examples.py ✅
 - Audio utils: backend/app/audio/understanding.py ✅
-- DB models: backend/app/models/ (not created yet)
+- VAD recorder: backend/app/audio/vad_recorder.py ✅
+- Local ASR: backend/app/services/asr_local.py (not created yet)
 - WebSocket voice handler: backend/app/api/ws.py (not created yet)
-- VAD recorder: backend/app/audio/vad_recorder.py (not created yet)
+- DB models: backend/app/models/ (not created yet)
 
 ## DO NOT TOUCH
 - Nothing locked yet
 
 ## Last Updated
 - Date: 2026-04-26
-- By: Abhiyan (Phase 0 complete, Phase 1 starting)
+- By: Abhiyan (Phase 1 Task 1.1 complete, starting Task 1.2)
