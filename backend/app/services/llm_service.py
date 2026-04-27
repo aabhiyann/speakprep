@@ -2,12 +2,33 @@
 
 from __future__ import annotations
 
+import os
 import time
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Literal
 
+import structlog
+from groq import AsyncGroq
 from pydantic import BaseModel
+
+try:
+    from cerebras.cloud.sdk import AsyncCerebras  # type: ignore[import-untyped]
+
+    _CEREBRAS_AVAILABLE = True
+except ImportError:
+    AsyncCerebras = None  # type: ignore[assignment,misc]
+    _CEREBRAS_AVAILABLE = False
+
+try:
+    import google.generativeai as genai  # type: ignore[import-untyped]
+
+    _GEMINI_AVAILABLE = True
+except ImportError:
+    genai = None  # type: ignore[assignment]
+    _GEMINI_AVAILABLE = False
+
+logger = structlog.get_logger(__name__)
 
 
 class _CBState(str, Enum):
@@ -98,3 +119,42 @@ class _Provider:
     client: Any
     model: str
     circuit_breaker: CircuitBreaker = field(default_factory=CircuitBreaker)
+
+
+class LLMService:
+    def __init__(self) -> None:
+        self._providers: list[_Provider] = []
+        self._setup_providers()
+
+    def _setup_providers(self) -> None:
+        groq_key = os.getenv("GROQ_API_KEY")
+        if not groq_key:
+            raise ValueError("GROQ_API_KEY is required but not set")
+        self._providers.append(
+            _Provider(
+                name="groq",
+                client=AsyncGroq(api_key=groq_key),
+                model="llama-3.3-70b-versatile",
+            )
+        )
+
+        cerebras_key = os.getenv("CEREBRAS_API_KEY")
+        if cerebras_key and _CEREBRAS_AVAILABLE:
+            self._providers.append(
+                _Provider(
+                    name="cerebras",
+                    client=AsyncCerebras(api_key=cerebras_key),
+                    model="llama3.3-70b",
+                )
+            )
+
+        gemini_key = os.getenv("GEMINI_API_KEY")
+        if gemini_key and _GEMINI_AVAILABLE:
+            genai.configure(api_key=gemini_key)
+            self._providers.append(
+                _Provider(
+                    name="gemini",
+                    client=genai.GenerativeModel("gemini-1.5-flash"),
+                    model="gemini-1.5-flash",
+                )
+            )
