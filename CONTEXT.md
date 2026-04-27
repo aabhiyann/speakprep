@@ -7,7 +7,7 @@
 ## Started: April 2026
 ## Contributors: Abhiyan Sainju only — no AI tools appear as git contributors
 ## Current Phase: 1 — Local Voice Pipeline
-## Current Task: LLM service with Groq (Task 1.3)
+## Current Task: WebSocket voice handler (Task 1.4)
 
 ## Architecture Summary
 - Backend: Python 3.12, FastAPI, asyncio, WebSockets
@@ -55,8 +55,11 @@
 - [x] backend/app/services/asr_local.py — LocalASR with faster-whisper, hallucination prevention, asyncio.to_thread
 - [x] backend/tests/unit/test_asr_local.py — 8 passing unit tests (WhisperModel mocked)
 
+- [x] backend/app/services/llm_service.py — LLMService with Groq/Cerebras/Gemini fallback, CircuitBreaker, streaming
+- [x] backend/tests/unit/test_llm_service.py — 13 passing unit tests (all providers mocked)
+
 ## What's In Progress
-- LLM service (backend/app/services/llm_service.py) — not started
+- WebSocket voice handler (backend/app/api/ws.py) — not started (Task 1.4)
 
 ## What's Blocked
 - Nothing
@@ -68,6 +71,7 @@
 - Audio utils: backend/app/audio/understanding.py ✅
 - VAD recorder: backend/app/audio/vad_recorder.py ✅
 - Local ASR: backend/app/services/asr_local.py ✅
+- LLM service: backend/app/services/llm_service.py ✅
 - WebSocket voice handler: backend/app/api/ws.py (not created yet)
 - DB models: backend/app/models/ (not created yet)
 
@@ -81,5 +85,5 @@
 - Nothing locked yet
 
 ## Last Updated
-- Date: 2026-04-26
-- By: Abhiyan (Phase 1 Task 1.2 complete, starting Task 1.3; added function-level commit convention)
+- Date: 2026-04-27
+- By: Abhiyan (Phase 1 Task 1.3 complete — LLMService, 43 tests passing, starting Task 1.4)
