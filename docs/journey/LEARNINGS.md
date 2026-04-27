@@ -4,6 +4,162 @@ Format: ### Concept — Date / Explanation
 
 ---
 
+### Whisper's architecture — encoder-decoder, mel spectrogram, why 30s limit — 2026-04-26
+
+**The confusion before:**
+I knew Whisper converted audio to text but I had no idea what was happening inside. I thought it was just "audio in, text out" like a black box.
+
+**The mental model that works:**
+Whisper has three stages:
+
+1. **Preprocessing**: raw 16kHz audio → mel spectrogram. A mel spectrogram is a 2D image: time on the x-axis, frequency on the y-axis, brightness = loudness. The "mel" scale compresses high frequencies (humans can't distinguish 8000 Hz from 8100 Hz well) and expands low frequencies (100 Hz vs 200 Hz is clearly different). Log scale compresses amplitude. Whisper always pads or truncates to exactly 30 seconds.
+
+2. **Encoder**: the mel spectrogram (effectively a 2D image) goes through two Conv1D layers for local feature extraction, then through transformer blocks. Each block has self-attention (every position attends to every other position) and a feed-forward layer. Output: a rich numerical representation of "what acoustic patterns are present."
+
+3. **Decoder**: generates text tokens one at a time. At each step: look at previously generated tokens + cross-attend to the encoder output + pick the most likely next token. Repeat until `<|endoftext|>`. This is why Whisper can't start outputting until it "understands" the full audio context.
+
+The 30-second limit: the model was trained on 30-second windows. The positional encodings only go up to 30s. Longer audio must be chunked and merged, introducing errors at boundaries.
+
+**Why it matters for SpeakPrep specifically:**
+Interview answers are typically 30-90 seconds. For the offline fallback, we need to be aware that long answers require chunking. Deepgram (Phase 2, primary ASR) doesn't have this limitation — it uses CTC which processes frames as they arrive, not fixed windows.
+
+**The code that made it real:**
+```python
+# faster-whisper handles the mel spectrogram internally
+# We just need to pass float32 audio normalised to [-1.0, 1.0]
+audio_f32 = pcm_to_float32(audio)  # int16 → float32
+segments_iter, info = self._model.transcribe(audio_f32, language="en")
+```
+
+**What to read if you want to go deeper:**
+[Whisper paper — arxiv.org/abs/2212.04356](https://arxiv.org/abs/2212.04356) — "Robust Speech Recognition via Large-Scale Weak Supervision"
+
+**Interview answer version:**
+"Whisper converts audio to a log-mel spectrogram then runs an encoder-decoder transformer. The encoder reads the full 30-second audio context, the decoder generates text tokens autoregressively using cross-attention to the encoder. It's fundamentally different from streaming ASR — it needs the complete audio before outputting anything."
+
+---
+
+### Hallucination detection — no_speech_prob and compression_ratio — 2026-04-26
+
+**The confusion before:**
+I didn't know Whisper could hallucinate. I assumed if you gave it audio it would give you an accurate transcript.
+
+**The mental model that works:**
+Whisper hallucinates on silence and noise — it generates plausible-sounding text even when there's nothing to transcribe. This affects ~40% of non-speech segments. It's not a bug, it's a consequence of how it was trained: the model learned to always produce text given a 30-second window, because the training data was audio that always had speech.
+
+Two detection signals Whisper exposes:
+
+**`no_speech_prob`**: probability the model assigns to the audio being non-speech. Ranges 0.0–1.0. Above 0.6 = likely silence or noise, return None.
+
+**`compression_ratio`**: hallucinations tend to be repetitive ("Thank you for watching. Please like and subscribe."). Repetitive text compresses well. The ratio is length(original) / length(compressed). High ratio = very repetitive = suspect. Above 2.4 = likely hallucination, return None.
+
+These are the same two filters used in OpenAI's original Whisper code. faster-whisper computes `compression_ratio` using a token-based approach (comparing output tokens to what's statistically expected for the audio length).
+
+**Why it matters for SpeakPrep specifically:**
+Without these filters, a user who pauses or has background noise would generate a hallucinated transcript that the LLM would respond to. The LLM can't tell the difference — it would give interview coaching feedback on nonsense text.
+
+**The code that made it real:**
+```python
+max_no_speech_prob = max(s.no_speech_prob for s in segments)
+max_compression_ratio = max(s.compression_ratio for s in segments)
+
+if max_no_speech_prob > 0.6:
+    return None  # silence or noise
+if max_compression_ratio > 2.4:
+    return None  # likely hallucination
+```
+
+**What to read if you want to go deeper:**
+[faster-whisper source — transcribe.py](https://github.com/SYSTRAN/faster-whisper/blob/master/faster_whisper/transcribe.py) — `no_speech_prob` and `compression_ratio` calculation in context
+
+**Interview answer version:**
+"Whisper hallucinates on silence — it generates text even when there's no speech. I filter results using two built-in signals: `no_speech_prob > 0.6` (the model itself says this is probably not speech) and `compression_ratio > 2.4` (the output is highly repetitive, a hallucination signature). Both are computed per-segment; I use the worst case across all segments."
+
+---
+
+### Python generators — one-time iterables, why you must materialise them — 2026-04-26
+
+**The confusion before:**
+I knew generators existed but I thought of them as just "lazy lists." I didn't fully understand that they're stateful and can only be traversed once.
+
+**The mental model that works:**
+A generator is a function that yields values one at a time instead of computing them all upfront. When you call a generator function, you get a generator object — a cursor sitting at the start of the sequence. Each `next()` call advances the cursor and returns the next value. When the cursor reaches the end, it's done. There is no "go back to the start."
+
+```python
+def count_to_three():
+    yield 1
+    yield 2
+    yield 3
+
+gen = count_to_three()
+list(gen)   # [1, 2, 3]
+list(gen)   # [] — already exhausted
+```
+
+faster-whisper uses this because Whisper generates transcript segments as it processes the audio. Materialising all segments would require keeping them all in memory; the generator lets you process each segment as it's decoded.
+
+But we need multiple passes: one for `max(no_speech_prob)`, one for `max(compression_ratio)`, one for joining text. So we call `list(segments_iter)` once, store in a list, iterate as many times as needed.
+
+**Why it matters for SpeakPrep specifically:**
+This same pattern will appear with Groq's streaming API (Task 1.3) and Deepgram's streaming API (Phase 2). Streaming responses are generators/async generators. Understanding that they're single-pass is essential for correct code.
+
+**The code that made it real:**
+```python
+segments_iter, info = self._model.transcribe(audio_f32, ...)
+segments = list(segments_iter)  # materialise — exhaust once, store, iterate freely
+max_no_speech_prob = max(s.no_speech_prob for s in segments)   # pass 1
+max_compression_ratio = max(s.compression_ratio for s in segments)  # pass 2
+text = " ".join(s.text.strip() for s in segments)  # pass 3
+```
+
+**What to read if you want to go deeper:**
+[Python docs — generators](https://docs.python.org/3/howto/functional.html#generators) — Python Functional Programming HOWTO, generators section
+
+**Interview answer version:**
+"Python generators are stateful one-time iterables — once exhausted they return nothing. faster-whisper returns a generator of transcript segments. I materialise it with list() immediately because I need three passes: two for hallucination filtering and one for joining the text."
+
+---
+
+### Pydantic BaseModel — type-safe data classes with validation — 2026-04-26
+
+**The confusion before:**
+I knew Python had `dataclass` and `TypedDict`. I didn't understand why you'd use Pydantic instead.
+
+**The mental model that works:**
+A `dataclass` is just a class with auto-generated `__init__`. No validation — if you pass a string where a float is expected, it silently stores the string. `TypedDict` is only checked by the type checker (mypy), not at runtime.
+
+Pydantic `BaseModel` validates types at construction time:
+```python
+result = TranscriptionResult(text="hello", no_speech_prob="not-a-float", ...)
+# Raises ValidationError: no_speech_prob must be float
+```
+
+It also gives you `.model_dump()` (Python dict), `.model_json()` (JSON string), and direct integration with FastAPI — when a Pydantic model is returned from a FastAPI route, it's automatically serialized to JSON.
+
+**Why it matters for SpeakPrep specifically:**
+`TranscriptionResult` will eventually go over the WebSocket as JSON. In the real handler, we'll return it from an endpoint or serialize it directly. Pydantic handles that automatically. Also: if faster-whisper returns an unexpected type for `no_speech_prob` (a bug in a new version), Pydantic catches it at the boundary rather than letting it silently propagate to the LLM.
+
+**The code that made it real:**
+```python
+class TranscriptionResult(BaseModel):
+    text: str
+    no_speech_prob: float   # validated at construction
+    language: str
+    duration_seconds: float
+    latency_ms: int
+
+result = TranscriptionResult(text=text, no_speech_prob=0.04, ...)
+result.model_dump()  # {'text': ..., 'no_speech_prob': 0.04, ...}
+```
+
+**What to read if you want to go deeper:**
+[Pydantic v2 docs — models](https://docs.pydantic.dev/latest/concepts/models/)
+
+**Interview answer version:**
+"I use Pydantic BaseModel for structured return types because it validates field types at construction (not just statically), gives free JSON serialization, and integrates directly with FastAPI's response handling. A TypedDict would only be checked by mypy — Pydantic catches type mismatches at runtime at the data boundary."
+
+---
+
 ### VAD state machine — triggered flag + silence counter — 2026-04-26
 
 **The confusion before:**

@@ -2,6 +2,36 @@
 
 ---
 
+## 2026-04-26 — Day 2 cont. — Phase 1 Task 1.2: LocalASR
+
+### What I Built Today
+Created `backend/app/services/asr_local.py` — the `LocalASR` class wrapping faster-whisper as the offline fallback transcription service. The `transcribe()` method is async and runs faster-whisper in a thread pool via `asyncio.to_thread` so inference never blocks the event loop. Hallucination prevention filters on `no_speech_prob > 0.6`, `compression_ratio > 2.4`, and empty text. 8 unit tests using a mocked `WhisperModel` — no actual model is loaded during tests (loading takes 10-30s and requires 1.5GB RAM). Total tests now 30/30 passing.
+
+### What I Learned
+- **faster-whisper returns a lazy generator, not a list.** Calling `segments, info = model.transcribe(...)` doesn't start inference — it returns a generator that runs as you iterate. This means calling `max(s.no_speech_prob for s in segments)` exhausts the generator. The second `max()` call sees empty. Always `list(segments_iter)` first.
+- **`no_speech_prob` and `compression_ratio` live on segments, not on `info`**. The architecture doc simplifies this. `info` has `language` and `duration`. Each `Segment` has `text`, `no_speech_prob`, `compression_ratio`. I use `max()` across all segments — the worst segment determines whether to filter.
+- **Pydantic `BaseModel` for return types**: a TypedDict or dataclass would also work, but Pydantic validates the fields at construction time, gives you `.model_dump()` and `.model_json()` for free, and integrates with FastAPI's automatic JSON serialization. When `TranscriptionResult` eventually goes over the WebSocket as JSON, FastAPI will handle it automatically.
+- **Why mock in tests, not monkeypatch audio**: The real WhisperModel takes 10-30 seconds to load and requires CTranslate2 to download model weights. Tests that take 30s get skipped. Mocking the model means tests run in under 1 second and verify exactly the logic we wrote (filtering, field mapping, empty handling) rather than the model's accuracy.
+
+### What Confused Me
+- **`asyncio.to_thread` with a mock**: In tests, `asyncio.to_thread(self._transcribe_sync, audio)` runs `_transcribe_sync` in a real thread pool even when the model is mocked. The mock is thread-safe (Python's GIL protects attribute access) so this works fine. But it means tests are genuinely async — they need `@pytest.mark.asyncio` or they'd just return a coroutine without running it.
+
+### Decisions Made
+- `asyncio.to_thread` for CPU-bound inference (see D-9)
+- Materialise generator with `list()` before filtering (see D-10)
+- `max()` across segments for filtering, not per-segment (see D-11)
+- `WhisperModel` initialised once in `__init__` (see D-12)
+
+### How It Feels
+The mock pattern made this feel clean — you're testing the logic (filtering, field mapping) independently from the model. Good separation. 30 green tests going into the LLM service.
+
+### Tomorrow's Plan
+1. Build `LLMService` at `backend/app/services/llm_service.py`
+2. Groq/Llama 3.3 70B with streaming support
+3. System prompt for interview coach persona
+
+---
+
 ## 2026-04-26 — Day 2 cont. — Phase 1 Task 1.1: VADRecorder
 
 ### What I Built Today
