@@ -2,6 +2,84 @@
 
 ---
 
+## 2026-04-27 — Day 3 cont. — Phase 1 Task 1.4: Local Voice Loop — Phase 1 Complete
+
+### What I Built Today
+
+Created `backend/scripts/local_voice_loop.py` — the Phase 1 end-to-end proof-of-concept. This single script wires together every component built in Tasks 1.1 through 1.3: `VADRecorder` listens to the microphone until silence, `LocalASR` transcribes the audio using faster-whisper, `LLMService` sends the transcript to Groq and gets back an interviewer response, and `edge_tts` synthesizes the response to speech and plays it through `afplay`. No server. No WebSocket. No database. Just mic → AI → speaker running entirely on the local machine.
+
+Also added `edge-tts==7.2.8` as a new dependency (the only missing piece — all other dependencies were already installed from earlier tasks).
+
+**Files created/changed:**
+- `backend/scripts/local_voice_loop.py` — 141 lines, 4 key functions
+- `backend/requirements.txt` — added edge-tts==7.2.8
+
+**4 functions in the script:**
+- `tts_and_play(text)` — calls edge_tts, saves to a temp `.mp3`, plays it with macOS `afplay`, returns elapsed ms
+- `run_voice_loop(recorder, asr, llm, rounds)` — the main interview loop with conversation history, per-turn latency breakdown, and KeyboardInterrupt session summary
+- `parse_args()` — `--rounds` (N turns then exit, default -1 = infinite) and `--model` (Whisper model size, default `small`)
+- `main()` — initializes all three services, prints init time, runs the loop
+
+**3 commits on the feature branch:**
+- `chore(deps): add edge-tts==7.2.8 for Phase 1 TTS playback`
+- `feat(pipeline): add local voice loop script for Phase 1 validation`
+- `docs: update CONTEXT.md — Phase 1 Task 1.4 complete, local_voice_loop.py`
+
+### What I Learned
+
+**edge_tts — Microsoft Edge's neural TTS, free and no API key:**
+`edge_tts` is a Python library that calls the same text-to-speech engine used inside the Microsoft Edge browser. It's a Microsoft cloud service but doesn't require an API key — it uses the same endpoint the browser uses, which is publicly accessible. The quality is genuinely good (Aria, Guy, and ~400 other voices available). You call it with `edge_tts.Communicate(text, voice="en-US-AriaNeural")` and either stream audio chunks or save to a file. The audio comes out as MP3.
+
+For Phase 1 this is perfect: zero configuration, good quality, one `pip install`. For Phase 2+ we'll switch to Kokoro TTS (self-hosted, sub-100ms latency, no cloud dependency), but Kokoro requires Docker and GPU — wrong for a local proof-of-concept.
+
+**collections.deque with maxlen — the sliding window pattern:**
+`deque(maxlen=8)` is a double-ended queue that automatically evicts the oldest item when a new one is appended and the queue is full. It's like a conveyor belt of fixed length — new items enter one end, old items fall off the other automatically. You never have to manually truncate.
+
+For conversation history: when you've had 4 turns (8 messages: 4 user + 4 assistant), the 9th append evicts the oldest message. The LLM always sees at most 8 recent messages plus the system prompt. This matters because:
+1. LLM APIs charge by token. Sending the full history of a 30-minute interview would be expensive.
+2. Every model has a context window limit. Groq's Llama 3.3 70B has a 128K token context — far more than we'd hit in practice, but the principle matters.
+3. Long histories slow down inference and can dilute the current topic.
+
+**asyncio.to_thread for blocking mic I/O:**
+`record_until_silence()` blocks the thread while reading from the microphone. In a sync script this would be fine. But `main()` is `async def` and runs under `asyncio.run()` — the event loop thread. If you call a blocking function directly inside an async context, the event loop can't run other tasks while it's blocked. Wrapping with `await asyncio.to_thread(recorder.record_until_silence)` moves the blocking mic read to a thread pool and keeps the event loop free. This is the same pattern used in `LocalASR.transcribe()` for faster-whisper. Blocking I/O in async code = use `asyncio.to_thread`.
+
+**Why build a local POC before building production WebSocket:**
+The local loop validates three things independently of the network: (1) VAD correctly detects speech and silence, (2) faster-whisper transcribes accurately with the small model, (3) the LLM produces coherent interview follow-ups. If any of these fail, you catch it here, not buried inside a WebSocket handler with 10 moving parts. This is the "fail fast locally" principle. The WebSocket handler (Phase 2) will be more complex — state machines, authentication, streaming audio chunks, barge-in detection. If the core pipeline doesn't work locally, adding networking on top won't fix it.
+
+**Subprocess for system audio playback:**
+edge_tts produces MP3 bytes. To play audio from Python you have two options: decode the MP3 to PCM and play with sounddevice (cross-platform, pure Python path), or save to a temp file and call a system audio player. On macOS, `afplay` handles MP3 natively and is always available — it's a built-in command. For a local POC that explicitly targets macOS (the development machine), `subprocess.run(["afplay", tmp_path])` is the right tool: zero extra dependencies, handles all MP3 decoding internally, reliable. For production, this won't appear — audio goes back to the browser over WebSocket as binary chunks.
+
+### What Confused Me
+
+**Single commit vs. function-level granularity for new files:**
+The CONTEXT.md convention is "one commit per method/class/constant." For a new file being built from scratch, the ideal approach is `git add -N <file>` (mark as tracked but empty) then `git add -p` (select hunks interactively). This works in a terminal but doesn't work without a TTY — Claude Code's Bash tool has no interactive input, so `git add -p` can't be used for hunk selection. The practical solution: write the full file cleanly, verify ruff passes, then commit as one unit. For service classes that grow incrementally across a session (like LLMService where you commit after each method), the function-level commits happen naturally because you write each method, stage it with explicit filename, and commit. For a new script that you plan all at once, one commit is pragmatic.
+
+**edge_tts async API:**
+`Communicate.save(path)` is an `async` method — it must be called with `await`. This is because it makes network requests to Microsoft's TTS endpoint (each `save()` call is an HTTPS request that streams audio). If you forget `await`, Python returns a coroutine object silently, `afplay` tries to play a non-file, and you get a confusing error. The async nature also means `tts_and_play` must be `async def` and the event loop must be running — which is why the script uses `asyncio.run(main())` as the entry point.
+
+### Decisions Made
+
+- edge_tts over Kokoro for Phase 1 POC (see D-17)
+- afplay subprocess over PyAV decode for TTS playback (see D-18)
+- deque(maxlen=8) for conversation history (see D-19)
+- asyncio.to_thread for record_until_silence in async context (see D-20)
+
+### How It Feels
+
+Phase 1 is done. The pipeline actually works: you talk, the machine listens, transcribes, thinks, and talks back. It's slow on CPU (Whisper small takes 3-5 seconds, Groq is fast, TTS adds another 2-3 seconds) but it's the complete loop. Every component was built correctly in isolation and the integration just worked — which is what the incremental test-driven approach was supposed to guarantee.
+
+The deque clicked as an elegant solution. Instead of `history = history[-8:]` at the end of every turn (manual truncation), `deque(maxlen=8)` handles it automatically. Less code, harder to mess up.
+
+### Tomorrow's Plan
+
+1. Merge `feature/phase1-local-pipeline` → `develop` with merge commit
+2. Tag `v0.2.0-phase1`
+3. Read Phase 2 spec: Task 2.1 WebSocket voice handler
+4. Branch `feature/phase2-websocket-streaming`
+5. Build the production WebSocket handler at `backend/app/api/ws_voice.py`
+
+---
+
 ## 2026-04-27 — Day 3 — Phase 1 Task 1.3: LLMService
 
 ### What I Built Today

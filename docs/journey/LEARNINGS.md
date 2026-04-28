@@ -4,6 +4,291 @@ Format: ### Concept — Date / Explanation
 
 ---
 
+### edge_tts — Microsoft Edge neural TTS, free cloud API — 2026-04-27
+
+**The confusion before:**
+I knew TTS (text-to-speech) existed but I assumed you needed a paid API key or a heavy local model. I didn't know there was a free, high-quality option.
+
+**The mental model that works:**
+The Microsoft Edge browser has a built-in TTS engine for reading web pages aloud. That engine uses Microsoft's Azure neural TTS infrastructure. The `edge_tts` Python library accesses the same endpoint the browser uses — it's publicly accessible without authentication.
+
+```python
+import edge_tts
+
+communicate = edge_tts.Communicate("Hello, tell me about yourself.", voice="en-US-AriaNeural")
+await communicate.save("/tmp/output.mp3")   # downloads MP3 from Microsoft's servers
+# or stream it:
+async for chunk_type, chunk_data in communicate.stream():
+    if chunk_type == "audio":
+        process(chunk_data)   # raw MP3 bytes, chunk by chunk
+```
+
+Key facts:
+- **No API key required** — uses the same unauthenticated endpoint as the Edge browser
+- **~400 voices** across dozens of languages — use `edge_tts.list_voices()` async to see them
+- **Output is MP3** at 24kHz — needs decoding to play with sounddevice (PCM), or just use a system player like `afplay`
+- **Network latency** — each call makes an HTTPS request; budget 500ms-2s depending on connection
+- **Not for production** — no SLA, no rate limit guarantees, Microsoft could change the endpoint. Production uses Kokoro (self-hosted)
+
+The `async def` API (`await communicate.save(...)`) is because each call is a network request. You cannot use it without an async event loop running.
+
+**Why it matters for SpeakPrep specifically:**
+Perfect for Phase 1 local POC — one `pip install`, no setup, good quality. Phase 2+ uses Kokoro TTS (self-hosted Docker, sub-100ms, no cloud dependency). edge_tts lets you validate the full pipeline locally in minutes instead of spending a day setting up Docker + GPU inference.
+
+**The code that made it real:**
+```python
+communicate = edge_tts.Communicate(text, voice=_TTS_VOICE)
+await communicate.save(tmp_path)           # async HTTP request → writes MP3 to disk
+subprocess.run(["afplay", tmp_path])       # macOS built-in: plays MP3 via CoreAudio
+```
+
+**One deep read:** [edge_tts on PyPI](https://pypi.org/project/edge-tts/) — README has voice list and all available methods.
+
+---
+
+### collections.deque with maxlen — sliding window / circular buffer — 2026-04-27
+
+**The confusion before:**
+I knew Python had `list` and `deque` but I treated deque as just a faster list for left-appends. I didn't know about `maxlen` or why you'd ever use it over a manual slice.
+
+**The mental model that works:**
+`deque(maxlen=N)` is a conveyor belt of fixed length. New items enter one end. When the belt is full, old items fall off the other end automatically. The data structure enforces the size limit — you can't accidentally grow it past N.
+
+```python
+from collections import deque
+
+history = deque(maxlen=3)
+history.append("turn 1")    # deque(['turn 1'])
+history.append("turn 2")    # deque(['turn 1', 'turn 2'])
+history.append("turn 3")    # deque(['turn 1', 'turn 2', 'turn 3'])
+history.append("turn 4")    # deque(['turn 2', 'turn 3', 'turn 4'])  ← 'turn 1' evicted!
+```
+
+It supports all the same read operations as list: `list(history)` converts it, indexing with `history[0]` works, iterating with `for item in history` works. The only difference is appending: when full, it drops the oldest.
+
+Compare to manual approach:
+```python
+# Manual — easy to forget, creates new list on every turn
+history.append(msg)
+history = history[-8:]    # truncate
+
+# deque(maxlen=8) — enforced by the type, zero extra code
+history.append(msg)       # that's it — automatically bounded
+```
+
+**Why it matters for SpeakPrep specifically:**
+Interview sessions can be long. Without a bound, conversation history grows forever, burning tokens and potentially hitting context limits. `deque(maxlen=8)` gives the LLM the 4 most recent turns (8 messages: 4 user + 4 assistant) without any manual management. The system prompt is prepended fresh each call and is NOT in the deque — it's always present regardless of history length.
+
+**The code that made it real:**
+```python
+history: deque[Message] = deque(maxlen=_MAX_HISTORY)  # _MAX_HISTORY = 8
+
+history.append(Message(role="user", content=result.text))
+# ... LLM call ...
+history.append(Message(role="assistant", content=response.content))
+# history never exceeds 8 messages — oldest evicted automatically
+
+messages = [Message(role="system", content=_SYSTEM_PROMPT), *list(history)]
+# system prompt + up to 8 recent messages
+```
+
+**One deep read:** [Python docs — collections.deque](https://docs.python.org/3/library/collections.html#collections.deque) — see the `maxlen` parameter section.
+
+---
+
+### Local proof-of-concept (POC) — why you build before you build — 2026-04-27
+
+**The confusion before:**
+I thought the "right" way was to build the final production system from the start. Building something simpler first felt like wasted effort.
+
+**The mental model that works:**
+A proof-of-concept is a deliberately simplified version of the real thing that answers one specific question: "Does this approach work at all?" It sacrifices everything (performance, reliability, scalability, error handling) in exchange for speed of answer.
+
+The SpeakPrep pipeline has 4 components:
+```
+Microphone → VAD → ASR → LLM → TTS → Speaker
+```
+
+Each component could fail or integrate badly with the others. The local voice loop (`local_voice_loop.py`) validates all four integrations without the complexity of a WebSocket server, authentication, database, or streaming protocol. If faster-whisper produces hallucinations on your microphone, you catch that here in 20 minutes. If Groq produces incoherent interview questions, you catch that here. If edge_tts audio quality is unacceptable, you catch that here.
+
+The production WebSocket handler (Phase 2) adds: concurrent connections, state machines, barge-in detection, binary audio streaming, JWT authentication, database sessions. Building all of that before validating the core pipeline is a waste of effort if the core pipeline is broken.
+
+**The principle:**
+Make the simplest thing that tests the most important hypothesis first. The most important hypothesis for SpeakPrep Phase 1 is: "Can I take mic audio, transcribe it, get an AI response, and speak it back?" The local loop answers this with 141 lines of code. The full production handler answers this with 500+ lines. Build the 141 first.
+
+**Why it matters for SpeakPrep specifically:**
+Phase 1 (local POC) is the whole point of `feature/phase1-local-pipeline`. Phase 2 is where the complexity lives. By tagging `v0.2.0-phase1` and closing the branch, you formally acknowledge that the foundation is validated before moving on.
+
+**One deep read:** [Martin Fowler — Strangler Fig Application](https://martinfowler.com/bliki/StranglerFigApplication.html) — the same principle applied to replacing legacy systems incrementally.
+
+---
+
+### subprocess — calling system commands from Python — 2026-04-27
+
+**The confusion before:**
+I knew `os.system("command")` existed but I'd avoided it because it seemed hacky. I didn't know the modern way or when it was the right tool.
+
+**The mental model that works:**
+`subprocess.run()` is the standard Python way to run an external command and wait for it to finish. It's not hacky — it's the correct tool when the right implementation already exists as a system binary.
+
+```python
+import subprocess
+
+# Basic usage
+result = subprocess.run(["ls", "-la"], capture_output=True, text=True)
+print(result.stdout)    # "total 128\n-rw-r--r-- ..."
+print(result.returncode)  # 0 = success, non-zero = error
+
+# check=True raises CalledProcessError if the command fails
+subprocess.run(["afplay", "/tmp/audio.mp3"], check=True)
+
+# Don't use shell=True — it's a security risk (command injection)
+# Bad:  subprocess.run(f"afplay {path}", shell=True)
+# Good: subprocess.run(["afplay", path], check=True)
+```
+
+**Why pass a list, not a string:**
+`shell=True` runs the command through the shell (`/bin/sh -c "command"`). If `path` contains spaces or shell metacharacters (`;`, `|`, `&`), they'd be interpreted by the shell. Using a list bypasses the shell entirely — arguments are passed directly to the OS, no interpretation. Safer, more predictable, never a security issue from user-controlled input.
+
+**Why it matters for SpeakPrep specifically:**
+`afplay` on macOS handles MP3 decoding via CoreAudio — it knows the sample rate, channel count, and codec from the MP3 headers. Writing this in Python with PyAV would be 15 lines of boilerplate. For a local POC, the right answer is: use the system tool.
+
+**The code that made it real:**
+```python
+subprocess.run(["afplay", tmp_path], check=True)
+# afplay: built-in macOS audio player. Handles MP3, AAC, WAV, AIFF, etc.
+# Blocks until playback completes.
+# check=True: raises subprocess.CalledProcessError if afplay returns non-zero exit code
+```
+
+**One deep read:** [Python docs — subprocess](https://docs.python.org/3/library/subprocess.html) — specifically the "Security considerations" section on shell=False.
+
+---
+
+### tempfile.NamedTemporaryFile — safe temp files in Python — 2026-04-27
+
+**The confusion before:**
+I used to hardcode paths like `/tmp/audio.mp3`. I didn't know what was wrong with that.
+
+**The mental model that works:**
+Hardcoded temp paths have three problems:
+1. **Collision**: if two instances of the script run at the same time, they write to the same file and corrupt each other
+2. **Cleanup**: if the script crashes, `/tmp/audio.mp3` is left on disk forever
+3. **Predictability**: a malicious process that knows you'll write to `/tmp/audio.mp3` can create a symlink there first (symlink attack)
+
+`tempfile.NamedTemporaryFile` solves all three: it creates a uniquely named file (e.g., `/tmp/tmpX7k3mN.mp3`), and can auto-delete on close.
+
+```python
+import tempfile, os
+
+# delete=False: file persists after .close() so afplay can open it
+with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as f:
+    tmp_path = f.name      # e.g., "/tmp/tmpX7k3mN.mp3"
+    # file is now closed (exited the with block)
+
+try:
+    write_mp3_to(tmp_path)
+    play(tmp_path)
+finally:
+    os.unlink(tmp_path)    # cleanup guaranteed even if write/play raises
+```
+
+We use `delete=False` because edge_tts's `save()` needs to open the file by path after the `with` block has closed it. If we used the default `delete=True`, the file would be deleted when exiting the `with` block — before `save()` runs.
+
+The `finally` block guarantees cleanup. Even if `communicate.save()` raises a network error or `afplay` fails, `os.unlink` runs and the temp file is deleted.
+
+**Why it matters for SpeakPrep specifically:**
+In the local loop, this is a correctness and cleanliness issue. In production, TTS audio goes over WebSocket as binary chunks — no temp files involved. But the pattern (create, use, cleanup in finally) applies everywhere you deal with temporary resources.
+
+**One deep read:** [Python docs — tempfile](https://docs.python.org/3/library/tempfile.html)
+
+---
+
+### argparse — building CLI tools with flags — 2026-04-27
+
+**The confusion before:**
+I'd seen `sys.argv` used to read command-line arguments but manually parsing `sys.argv[1]`, `sys.argv[2]` gets complicated fast. I didn't know the standard library had a proper solution.
+
+**The mental model that works:**
+`argparse` is Python's built-in command-line argument parser. You declare what arguments the script accepts, and it handles everything else: parsing the command line, type conversion, error messages, and automatic `--help` generation.
+
+```python
+import argparse
+
+parser = argparse.ArgumentParser(description="SpeakPrep local voice interview loop")
+parser.add_argument(
+    "--rounds",
+    type=int,
+    default=-1,
+    help="Number of turns before exiting (default: infinite)",
+)
+parser.add_argument(
+    "--model",
+    type=str,
+    default="small",
+    help="Whisper model size (default: small)",
+)
+args = parser.parse_args()
+
+# Usage:
+# python script.py                    → args.rounds = -1, args.model = "small"
+# python script.py --rounds 3        → args.rounds = 3, args.model = "small"
+# python script.py --model tiny      → args.rounds = -1, args.model = "tiny"
+# python script.py --help            → prints help and exits
+# python script.py --rounds abc      → error: argument --rounds: invalid int value: 'abc'
+```
+
+`type=int` means argparse converts the string `"3"` to the integer `3` automatically, and reports an error if the conversion fails. `default=-1` means the value if the flag isn't passed. `help="..."` shows up in `--help` output.
+
+**Why it matters for SpeakPrep specifically:**
+`--rounds 3` is used for automated testing (run 3 turns, then exit cleanly). `--model tiny` lets you switch to a smaller/faster Whisper model when testing the LLM side without caring about ASR quality. These flags are exactly what make the POC script useful — you can control it without editing code.
+
+**One deep read:** [Python docs — argparse tutorial](https://docs.python.org/3/howto/argparse.html)
+
+---
+
+### asyncio.run() — the entry point for async programs — 2026-04-27
+
+**The confusion before:**
+I'd seen `asyncio.run(main())` at the bottom of async scripts and cargo-culted it. I didn't understand what it actually did or why it was necessary.
+
+**The mental model that works:**
+`async def main()` is a coroutine function — calling it returns a coroutine object, not a result. The coroutine doesn't run until something actually executes it. That something is the event loop.
+
+`asyncio.run(main())`:
+1. Creates a new event loop
+2. Runs `main()` on that loop until it returns
+3. Cancels any remaining tasks
+4. Closes the loop
+5. Returns `main()`'s return value
+
+Without `asyncio.run()`:
+```python
+# Wrong — this does nothing, main() just creates a coroutine object
+main()
+
+# Also wrong — this awaits it, but there's no event loop running yet
+await main()   # SyntaxError outside async context
+```
+
+Every async program needs an entry point where the event loop is created and started. `asyncio.run()` is that entry point for scripts. For FastAPI/uvicorn, the server itself manages the event loop — you never call `asyncio.run()` in a FastAPI app.
+
+**Why it matters for SpeakPrep specifically:**
+`local_voice_loop.py` is a standalone script, not a server. It needs to create its own event loop. `asyncio.run(main())` is the single correct way to do this. The script uses async functions (LLMService, edge_tts, asyncio.to_thread) that require an event loop to run.
+
+**The code that made it real:**
+```python
+# At the bottom of the script:
+if __name__ == "__main__":
+    asyncio.run(main())
+# `if __name__ == "__main__"` means: only run when executed directly
+# (not when imported as a module). Standard Python convention.
+```
+
+**One deep read:** [Python docs — asyncio.run](https://docs.python.org/3/library/asyncio-runner.html#asyncio.run)
+
+---
+
 ### Circuit breaker pattern — what it is and why it exists — 2026-04-27
 
 **The confusion before:**

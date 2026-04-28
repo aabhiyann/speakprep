@@ -7,7 +7,7 @@
 ## Started: April 2026
 ## Contributors: Abhiyan Sainju only — no AI tools appear as git contributors
 ## Current Phase: 1 — Local Voice Pipeline
-## Current Task: WebSocket voice handler (Task 1.4)
+## Current Task: Phase 1 complete — ready for Phase 2 WebSocket streaming
 
 ## Architecture Summary
 - Backend: Python 3.12, FastAPI, asyncio, WebSockets
@@ -58,8 +58,11 @@
 - [x] backend/app/services/llm_service.py — LLMService with Groq/Cerebras/Gemini fallback, CircuitBreaker, streaming
 - [x] backend/tests/unit/test_llm_service.py — 13 passing unit tests (all providers mocked)
 
+- [x] backend/scripts/local_voice_loop.py — end-to-end local voice loop (VADRecorder → LocalASR → LLMService → edge_tts/afplay)
+- [x] Phase 1 complete — tagged v0.2.0-phase1
+
 ## What's In Progress
-- WebSocket voice handler (backend/app/api/ws.py) — not started (Task 1.4)
+- Phase 2: WebSocket streaming (Task 2.1) — not started
 
 ## What's Blocked
 - Nothing
@@ -72,7 +75,8 @@
 - VAD recorder: backend/app/audio/vad_recorder.py ✅
 - Local ASR: backend/app/services/asr_local.py ✅
 - LLM service: backend/app/services/llm_service.py ✅
-- WebSocket voice handler: backend/app/api/ws.py (not created yet)
+- Local voice loop: backend/scripts/local_voice_loop.py ✅
+- WebSocket voice handler: backend/app/api/ws.py (not created yet — Phase 2)
 - DB models: backend/app/models/ (not created yet)
 
 ## Commit Convention
@@ -92,4 +96,4 @@
 
 ## Last Updated
 - Date: 2026-04-27
-- By: Abhiyan (Phase 1 Task 1.3 complete — LLMService, 43 tests passing, starting Task 1.4)
+- By: Abhiyan (Phase 1 complete — Task 1.4 done, local_voice_loop.py committed, ready to merge and tag v0.2.0-phase1)
