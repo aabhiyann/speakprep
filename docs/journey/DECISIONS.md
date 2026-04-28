@@ -4,6 +4,120 @@ Format: ### D-N | Date | Title
 
 ---
 
+### D-20 | 2026-04-27 | asyncio.to_thread for record_until_silence in async script
+
+**The question I was facing:**
+`VADRecorder.record_until_silence()` is a blocking synchronous method — it reads from the microphone using sounddevice's `RawInputStream`, blocking the calling thread until silence is detected. The `main()` and `run_voice_loop()` functions are `async def` and run under the asyncio event loop. If I call a blocking function directly inside `async` code, what actually happens?
+
+**Options I considered:**
+Option A — Call it directly: `audio = recorder.record_until_silence()`. The code is simple. But: this blocks the event loop thread for the entire duration of the recording (could be 2-60 seconds). During that time, no other coroutines can run — no asyncio tasks, no timeouts, nothing. For a single-user local script this is acceptable in theory, but it's incorrect practice and will cause bugs if the script ever gets more async logic (like a timeout for long silences, or cancellation on Ctrl+C during recording).
+
+Option B — `await asyncio.to_thread(recorder.record_until_silence)`: runs the blocking function in a thread pool and suspends the coroutine at the `await` — the event loop stays free. The microphone blocking happens in a real OS thread, not in the event loop thread. The coroutine resumes when `record_until_silence` returns.
+
+**What I chose:** Option B — asyncio.to_thread
+
+**Why:**
+The script's main loop is already fully async (LLMService.generate is async, tts_and_play is async). Mixing blocking calls into an async loop without `to_thread` is a pattern that "works" until it doesn't — and silently degrades behavior (KeyboardInterrupt during blocking mic read behaves differently than during awaited calls, asyncio timeouts won't fire). Using `to_thread` consistently for all blocking I/O makes the code correct by default and extends naturally to the production WebSocket handler where blocking the event loop is catastrophic. This is the same decision made for faster-whisper inference in D-9.
+
+**What I'm giving up:**
+Marginal complexity. The call is one extra word: `await asyncio.to_thread(...)` vs `recorder.record_until_silence()`. Trivial.
+
+**How I'll know if I was wrong:**
+If sounddevice or PortAudio behaves incorrectly when called from a non-main thread. In practice, sounddevice is thread-safe and this pattern is well-established in the Python audio community.
+
+**Interview answer version:**
+"Even in a local script, I used asyncio.to_thread for the blocking mic read because the main loop is async and mixing blocking calls into an async context is an antipattern — it defeats the event loop's cooperative scheduling. The same call structure I used for faster-whisper inference in LocalASR."
+
+---
+
+### D-19 | 2026-04-27 | collections.deque(maxlen=8) for conversation history
+
+**The question I was facing:**
+The interview loop accumulates messages (user transcripts and AI responses) in a conversation history list that gets sent to the LLM on every turn. Without a cap, this list grows indefinitely. A 30-minute interview at 1 turn per 30 seconds = 60 turns = 120 messages. How do I keep the history bounded?
+
+**Options I considered:**
+Option A — Manual slice: `history = history[-8:]` at the end of each turn (or before sending to LLM). Simple but easy to forget one call site, and it creates a new list on every turn. If history is long, this copies a lot of memory unnecessarily.
+
+Option B — `deque(maxlen=8)`: Python's standard library double-ended queue with a fixed maximum length. When a new item is appended and the deque is full, the oldest item is automatically evicted. Zero manual truncation code. The `maxlen` invariant is enforced by the data structure itself, not by the programmer.
+
+Option C — Keep full history, truncate only when calling LLM: `messages = [system_prompt] + list(history)[-8:]`. Sends only the last 8 but stores all of them. Useful if you want a full transcript for analytics but only send a window to the LLM.
+
+**What I chose:** Option B — deque(maxlen=8)
+
+**Why:**
+For a proof-of-concept, the full transcript isn't needed. Memory is also finite — storing a multi-hour interview history in RAM is wasteful for a local POC. The deque is the right abstraction: it makes the "sliding window of recent context" semantics explicit in the type itself. A reader who sees `deque(maxlen=8)` immediately understands the intention. A reader who sees `history = history[-8:]` has to understand that this is the truncation mechanism.
+
+The 8-message limit (4 turns of user+assistant) is a practical choice: enough context for the interviewer to track what the candidate said, not so much that it dominates the prompt. Groq's Llama 3.3 70B can handle far more, but the system prompt for a behavioral interviewer is short and 8 messages is plenty for coherent follow-up.
+
+**What I'm giving up:**
+Full transcript history. If we want to show the user a complete session summary at the end, we'd need a separate `full_history` list. Acceptable for a POC — Phase 3+ will have database logging.
+
+**How I'll know if I was wrong:**
+If the LLM produces incoherent follow-ups that require more context to make sense. In practice, interview follow-up questions are self-contained — each question responds to the immediately preceding answer.
+
+**Interview answer version:**
+"I used collections.deque with maxlen=8 for conversation history because it enforces the sliding window invariant automatically — no manual truncation code, no risk of forgetting to truncate at one call site. The maxlen makes the constraint explicit in the data structure itself."
+
+---
+
+### D-18 | 2026-04-27 | afplay subprocess over PyAV decode for TTS audio playback
+
+**The question I was facing:**
+edge_tts produces audio as MP3 bytes. To play it locally I need to either: (a) decode the MP3 to PCM and play with sounddevice, or (b) save to a temp file and use a system audio player. Both approaches work. Which is right for this script?
+
+**Options I considered:**
+Option A — PyAV decode + sounddevice: `av` (PyAV) is already installed in the project venv. It can decode MP3 bytes to a PCM numpy array using `av.open(io.BytesIO(mp3_bytes))`, then `sd.play(pcm_array, samplerate=24000)`. Cross-platform, no system dependencies, no temp file. Cons: more code (15-20 lines of PyAV audio container/stream/frame iteration), needs to query sample rate from container headers, and the resulting code is significantly more complex than a two-line subprocess call.
+
+Option B — Save to temp file + afplay: `await communicate.save(tmp_path)` writes the MP3 to a temporary file. `subprocess.run(["afplay", tmp_path])` plays it. `afplay` is a macOS built-in — available on every Mac without any installation. It handles MP3 decoding internally (CoreAudio), is always the right sample rate, and the entire TTS play logic is 5 lines. Cons: requires writing to disk (temp file), macOS-only.
+
+**What I chose:** Option B — afplay via subprocess
+
+**Why:**
+This script is explicitly a local macOS proof-of-concept. The dev machine is macOS (darwin). `afplay` is always available. The deployment target for production is an Oracle Cloud ARM server running Linux where audio playback is irrelevant — TTS audio in production goes directly to the browser over WebSocket as binary chunks. The macOS-only constraint is not a constraint for this file. Adding 15 lines of PyAV buffer manipulation for "cross-platform" support in a file that will never run cross-platform is engineering the wrong thing.
+
+The temp file approach adds one disk write (~50-200KB MP3 file) but the file is deleted immediately after playback in the `finally` block. On an SSD this is milliseconds.
+
+**What I'm giving up:**
+Cross-platform audio playback and playing from memory without a temp file. Both are irrelevant for a local macOS script.
+
+**How I'll know if I was wrong:**
+If anyone needs to run `local_voice_loop.py` on Linux. If that happens: replace `afplay` with `mpg123 -q` (Linux) or use the PyAV approach.
+
+**Interview answer version:**
+"For a local macOS proof-of-concept, I used subprocess to call macOS's built-in afplay rather than decoding MP3 with PyAV. The production TTS path sends audio bytes over WebSocket — no local playback needed there. Using the right tool for the scope: system player for local dev, binary WebSocket frames for production."
+
+---
+
+### D-17 | 2026-04-27 | edge_tts over Kokoro for Phase 1 local POC
+
+**The question I was facing:**
+The architecture document specifies Kokoro TTS as the production TTS engine (self-hosted, sub-100ms, high quality). But Kokoro requires Docker, at least 4GB RAM for the model, and GPU for low latency. For the Phase 1 local proof-of-concept, should I use Kokoro or a simpler alternative?
+
+**Options I considered:**
+Option A — Kokoro TTS: matches the production stack. Self-hosted, no cloud dependency, potentially very fast with GPU. Cons: requires Docker running locally, downloading the Kokoro model (~2GB+), a GPU for acceptable latency (CPU inference on Kokoro is very slow), and significant setup time. The POC's purpose is to validate the ASR → LLM → TTS pipeline end-to-end quickly — Kokoro setup would take hours and be a distraction.
+
+Option B — edge_tts (Microsoft Edge TTS): single `pip install`, no API key, no Docker, no GPU. Makes a network request to Microsoft's TTS service (the same one used in the Edge browser) and returns MP3 audio. Good voice quality (Aria neural voice sounds natural). Cons: requires internet, uses Microsoft's cloud service (not self-hosted), adds ~2-3 seconds of network latency for TTS. Acceptable for a POC where latency is not the primary goal.
+
+Option C — pyttsx3 (offline TTS): completely local, no network. Cons: robotic voice quality, system-dependent (different voices on Windows/macOS/Linux), actively distracting because the output sounds so bad it's hard to evaluate whether the LLM responses are good.
+
+**What I chose:** Option B — edge_tts
+
+**Why:**
+The Phase 1 POC has one purpose: validate that the full pipeline works. The question is "does it work?" not "is it fast?" edge_tts answers that question well — the audio quality is good enough that you can actually evaluate the interview conversation, the setup is one pip install, and the library has a clean async API that matches the rest of the async codebase. Kokoro is the right choice for Phase 2+ when latency matters and the production environment is established.
+
+This is an explicit "don't build the production solution in the proof-of-concept phase" decision. Premature optimization of the TTS component would delay the POC by a day and provide no additional learning.
+
+**What I'm giving up:**
+Matching the production TTS stack. If Kokoro has integration issues (HTTP streaming, audio format), those would be caught later in Phase 2. Acceptable tradeoff — the POC validates ASR→LLM more than TTS.
+
+**How I'll know if I was wrong:**
+If the edge_tts API or audio format causes issues that mask real pipeline problems. Unlikely — it's a simple `save()` call.
+
+**Interview answer version:**
+"For the Phase 1 local POC I chose edge_tts (Microsoft's Edge TTS, one pip install) over the production Kokoro TTS (self-hosted Docker, requires GPU). The POC's goal was pipeline validation, not latency optimization. Production TTS (Kokoro) gets integrated in Phase 2 when the server infrastructure exists."
+
+---
+
 ### D-13 | 2026-04-27 | _Provider as dataclass not abstract base class
 
 **The question I was facing:**
