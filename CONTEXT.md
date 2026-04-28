@@ -6,8 +6,8 @@
 ## Author: Abhiyan Sainju
 ## Started: April 2026
 ## Contributors: Abhiyan Sainju only — no AI tools appear as git contributors
-## Current Phase: 1 — Local Voice Pipeline
-## Current Task: Phase 1 complete — ready for Phase 2 WebSocket streaming
+## Current Phase: 2 — Real-Time Streaming
+## Current Task: Task 2.1 — WebSocket voice handler (not started)
 
 ## Architecture Summary
 - Backend: Python 3.12, FastAPI, asyncio, WebSockets
@@ -96,4 +96,4 @@
 
 ## Last Updated
 - Date: 2026-04-27
-- By: Abhiyan (Phase 1 complete — Task 1.4 done, local_voice_loop.py committed, ready to merge and tag v0.2.0-phase1)
+- By: Abhiyan (Phase 1 fully complete — PR #14 merged to develop, tagged v0.2.0-phase1, all journey docs written. Starting Phase 2.)
